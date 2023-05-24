@@ -20,11 +20,13 @@ public:
 	virtual void saveIandIAbsorb();
 
 	virtual void addI0();
+	virtual void addI0NoResponse();
 	virtual void saveI0();
 
 	virtual void readPhantom();
 	// 程序进度显示
 	virtual void showProcessInfo();
+	virtual void showProcessInfoNoResponse();
 	// 卷积
 	virtual void scatterSimulGrid();
 

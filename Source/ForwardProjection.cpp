@@ -65,7 +65,7 @@ void ForwardProjection::forwardSinMatPolyProjNoGridNoResponse()
     inCTScanInfoNoGridNoResponse();
 
     CBCTSinMatPolyForwardProjNoGrid mCBCTSinMatPolyForwardProjNoGrid = CBCTSinMatPolyForwardProjNoGrid(mCTScanParas, mGridInfo, mFilePath);
-    mCBCTSinMatPolyForwardProjNoGrid.computePolyForwProj();
+    mCBCTSinMatPolyForwardProjNoGrid.computePolyForwProjNoResponse();
 
 }
 

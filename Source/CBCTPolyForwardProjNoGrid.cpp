@@ -195,6 +195,17 @@ void CBCTPolyForwardProjNoGrid::addI0()
 	}
 }
 
+void CBCTPolyForwardProjNoGrid::addI0NoResponse()
+{
+	for (size_t i = 0; i < mCTScanParas.dNumV; i++)
+	{
+		for (size_t j = 0; j < mCTScanParas.dNumU; j++)
+		{
+			h_mForwardProj.I0[i * mCTScanParas.dNumU + j] += mCTScanParas.I0Val * mCTScanSystemInfo.spectrumVal;
+		}
+	}
+}
+
 void CBCTPolyForwardProjNoGrid::saveI0()
 {
 	// 保存I0
@@ -233,6 +244,14 @@ void CBCTPolyForwardProjNoGrid::showProcessInfo()
 	cout << "归一化能谱信息: " << h_mForwardProj.spectrumNormal[specIndex] << endl;
 	cout << "模体质量衰减系数: " << h_mForwardProj.phantomMassAtten[specIndex] << " cm^2/g" << endl;
 	cout << "闪烁体线性衰减系数: " << h_mForwardProj.scintillatorLineAtten[specIndex] << " 1/mm" << endl;
+}
+
+void CBCTPolyForwardProjNoGrid::showProcessInfoNoResponse()
+{
+	cout << endl;
+	cout << (specIndex + 1) * mCTScanParas.spectrumStep << "keV正过程计算中 =====>>>>>" << endl;
+	cout << "归一化能谱信息: " << h_mForwardProj.spectrumNormal[specIndex] << endl;
+	cout << "模体质量衰减系数: " << h_mForwardProj.phantomMassAtten[specIndex] << " cm^2/g" << endl;
 }
 
 void CBCTPolyForwardProjNoGrid::scatterSimulGrid()

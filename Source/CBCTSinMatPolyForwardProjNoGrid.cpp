@@ -49,7 +49,8 @@ void CBCTSinMatPolyForwardProjNoGrid::computePolyForwProj()
 
 
 	// 初始化 GPU
-	initDeviceNoGrid(d_mForwardProj, d_mCoordinate, mCTScanSystemInfo, mCTScanParas, h_mForwardProj);
+	cout << endl << "密度图像投影计算中 ===>>>" << endl;
+	initDeviceSinMatNoGrid(d_mForwardProj, d_mCoordinate, mCTScanSystemInfo, mCTScanParas, h_mForwardProj);
 
 	specIndex = 0;
 	for (size_t i = 0; i < mCTScanParas.specEnergyNum; i++)
@@ -105,7 +106,99 @@ void CBCTSinMatPolyForwardProjNoGrid::computePolyForwProj()
 
 void CBCTSinMatPolyForwardProjNoGrid::computePolyForwProjNoResponse()
 {
-	cout << "空函数！" << endl;
+	cout << "无滤线栅无探元响应的正过程成像开始 ====>>>>" << endl;
+
+	// 初始化主存
+	h_mForwardProj.phantom = new float[mCTScanParas.pNumX * mCTScanParas.pNumY * mCTScanParas.pNumZ]();
+	h_mForwardProj.I = new float[mCTScanParas.dNumU * mCTScanParas.dNumV * mCTScanParas.projNum](); // 初始化I为0
+	h_mForwardProj.IAbsorb = new float[mCTScanParas.dNumU * mCTScanParas.dNumV * mCTScanParas.projNum]();
+	h_mForwardProj.I0 = new float[mCTScanParas.dNumU * mCTScanParas.dNumV]();
+	//h_mForwardProj.detResponse = new float[mCTScanParas.dNumU * mCTScanParas.dNumV]();
+
+	I = new float[mCTScanParas.dNumU * mCTScanParas.dNumV * mCTScanParas.projNum]();  // 存放累加结果
+	IAbsorb = new float[mCTScanParas.dNumU * mCTScanParas.dNumV * mCTScanParas.projNum]();  // 存放累加结果
+
+	//aDetResponse = new float[mCTScanParas.specEnergyNum];   // 存放某一探元响应
+
+	computeParas();
+
+	// 显示成像信息
+	showScanSystemInfo();
+
+	// 读取能谱信息
+	h_mForwardProj.spectrumNormal = new float[mCTScanParas.specEnergyNum];
+	readSpecrtumNorm();
+
+	// 读取单材质模体质量衰减系数
+	h_mForwardProj.phantomMassAtten = new float[mCTScanParas.specEnergyNum];
+	readPhantomMassAtten();
+	// 读取单材质模体密度
+	h_mForwardProj.phantom = new float[mCTScanParas.pNumX * mCTScanParas.pNumY * mCTScanParas.pNumZ];
+	readPhantom();
+
+	// 计算闪烁体厚度
+	//h_mForwardProj.scintillatorPerThickness = new float[mCTScanParas.dNumU * mCTScanParas.dNumV];
+	//computePerScinThinckness();
+
+	// 读取闪烁体质量衰减系数
+	//h_mForwardProj.scintillatorLineAtten = new float[mCTScanParas.specEnergyNum];
+	//readScintillatorMassAttu();
+
+
+	// 初始化 GPU
+	cout << endl << "密度图像投影计算中 ===>>>" << endl;
+	initDeviceSinMatNoResponseNoGrid(d_mForwardProj, d_mCoordinate, mCTScanSystemInfo, mCTScanParas, h_mForwardProj);
+
+	specIndex = 0;
+	for (size_t i = 0; i < mCTScanParas.specEnergyNum; i++)
+	{
+		// 获得当前能量对应的概率，即谱中不同能量的对应值
+		mCTScanSystemInfo.spectrumVal = h_mForwardProj.spectrumNormal[i];
+		// 或者单材质模体的质量衰减系数
+		mCTScanSystemInfo.phantomMAtten = h_mForwardProj.phantomMassAtten[i] / 10.0f;   // 除以10保证单位后面计算单位统一
+
+		// 更新探测器响应
+		//updateDetResponse();
+
+		// 获得某一探元的响应
+		//getADetResponse();
+
+		// 显示进程
+		showProcessInfoNoResponse();
+
+		// 
+		forwardSinMatNoResponseProjNoGridGPU(d_mForwardProj, d_mCoordinate, mCTScanSystemInfo, mCTScanParas, h_mForwardProj);
+
+		// 计算结果叠加
+		addIandIAbsorb();
+		addI0NoResponse();
+
+		specIndex++;
+	}
+	freeDeviceMemory(d_mForwardProj, d_mCoordinate);
+
+	// 数据类型转换，并保存
+	IPolyenergetic = new uint32[mCTScanParas.dNumU * mCTScanParas.dNumV * mCTScanParas.projNum];
+	IPolyenergeticAbsorb = new uint32[mCTScanParas.dNumU * mCTScanParas.dNumV * mCTScanParas.projNum];
+
+	// 数据类型转换和数据保存
+	convertIandIAbsorbDt();
+	saveIandIAbsorb();
+	saveI0();
+
+
+	//scatterSimulGrid();
+
+	// 保存中间探元响应
+	//saveADetResponse();
+
+	// 计算proj并保存
+	h_mForwardProj.proj = new float[mCTScanParas.dNumU * mCTScanParas.dNumV * mCTScanParas.projNum]();
+	computeProj();
+	saveProj();
+
+	cout << "无滤线栅无探元响应的正过程成像完成!" << endl
+		<< "-------------------------------------" << endl;
 }
 
 void CBCTSinMatPolyForwardProjNoGrid::readPhantom()
