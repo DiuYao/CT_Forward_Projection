@@ -22,10 +22,12 @@ int main()
     ForwardProjection mForwardProjection;
     //mForwardProjection.forwardPolyProjGrid();
     //mForwardProjection.forwardPolyProjNoGrid();
-    //mForwardProjection.forwardSinMatPolyProjGrid();
+    mForwardProjection.forwardSinMatPolyProjGrid();
     //mForwardProjection.forwardSinMatPolyProjGridNoResponse();
     //mForwardProjection.forwardSinMatPolyProjNoGrid();
-    mForwardProjection.forwardSinMatPolyProjNoGridNoResponse();
+    //mForwardProjection.forwardSinMatPolyProjNoGridNoResponse();
+    
+    //mForwardProjection.forwarProjNoGridTestI0();
 }
 
 

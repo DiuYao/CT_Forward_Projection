@@ -14,6 +14,8 @@ public:
 
 	virtual void computePolyForwProj();
 
+	virtual void testI0();
+
 public:
 	virtual void initGridInfo();
 

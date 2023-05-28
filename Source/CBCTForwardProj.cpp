@@ -89,6 +89,12 @@ void CBCTForwardProj::convertIandIAbsorbDt()
 	}
 }
 
+void CBCTForwardProj::addStandardI0(float& I0Standard)
+{
+	I0Standard += mCTScanParas.I0Val * mCTScanSystemInfo.spectrumVal * mCTScanParas.mScintilltorInfo.detResponseFactor * (1 - expf(-h_mForwardProj.scintillatorLineAtten[specIndex] * mCTScanParas.mScintilltorInfo.scintillatorThickness));
+}
+
+
 // 生成闪烁体厚度，模拟工艺导致厚度不一致
 void CBCTForwardProj::computePerScinThinckness()
 {

@@ -17,6 +17,8 @@ public:
 	void forwardSinMatPolyProjNoGrid();
 	void forwardSinMatPolyProjNoGridNoResponse();
 
+	void forwarProjNoGridTestI0();
+
 private:
 	void inCTScanInfo();
 
@@ -25,6 +27,8 @@ private:
 	void inCTScanInfoSinMat();
 	void inCTScanInfoNoGrid();
 	void inCTScanInfoNoGridNoResponse();
+
+	void inCTScanInfoNoGridTestI0();
 
 private:
 

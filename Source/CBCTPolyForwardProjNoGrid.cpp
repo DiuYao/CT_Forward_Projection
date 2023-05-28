@@ -158,6 +158,83 @@ void CBCTPolyForwardProjNoGrid::computePolyForwProj()
 		<< "-------------------------------------" << endl;
 }
 
+void CBCTPolyForwardProjNoGrid::testI0()
+{
+	cout << "无滤线栅的I0测试开始 ====>>>>" << endl;
+
+	// 初始化主存
+	h_mForwardProj.I0 = new float[mCTScanParas.dNumU * mCTScanParas.dNumV]();
+
+	h_mForwardProj.detResponse = new float[mCTScanParas.dNumU * mCTScanParas.dNumV]();
+
+	computeParas();
+
+	// 读取能谱信息
+	h_mForwardProj.spectrumNormal = new float[mCTScanParas.specEnergyNum];
+	readSpecrtumNorm();
+
+	// 计算闪烁体厚度
+	h_mForwardProj.scintillatorPerThickness = new float[mCTScanParas.dNumU * mCTScanParas.dNumV];
+	computePerScinThinckness();
+
+	// 读取闪烁体质量衰减系数，并转换为线性衰减系数
+	h_mForwardProj.scintillatorLineAtten = new float[mCTScanParas.specEnergyNum];
+	readScintillatorMassAttu();
+
+
+	// 初始化 GPU
+	//initDeviceNoGrid(d_mForwardProj, d_mCoordinate, mCTScanSystemInfo, mCTScanParas, h_mForwardProj);
+
+	float I0Standard = 0;
+	specIndex = 0;
+	for (size_t i = 0; i < mCTScanParas.specEnergyNum; i++)
+	{
+		// 获得当前能量对应的概率，即谱中不同能量的对应值
+		mCTScanSystemInfo.spectrumVal = h_mForwardProj.spectrumNormal[i];
+
+		// 读取模体数据
+		//readPhantom();
+
+		// 更新探测器响应
+		updateDetResponse();
+
+		//showProcessInfo();
+
+		// GPU计算
+		//forwardProjNoGridGPU(d_mForwardProj, d_mCoordinate, mCTScanSystemInfo, mCTScanParas, h_mForwardProj);
+
+		// 计算结果叠加
+		//addIandIAbsorb();
+		addI0();
+		addStandardI0(I0Standard);
+
+		specIndex++;
+	}
+	// 释放GPU内存
+	//freeDeviceMemory(d_mForwardProj, d_mCoordinate);
+
+	// 数据类型转换，并保存
+	//IPolyenergetic = new uint32[mCTScanParas.dNumU * mCTScanParas.dNumV * mCTScanParas.projNum];
+	//IPolyenergeticAbsorb = new uint32[mCTScanParas.dNumU * mCTScanParas.dNumV * mCTScanParas.projNum];
+
+	//convertIandIAbsorbDt();
+	//saveIandIAbsorb();
+	saveI0();
+
+
+	//scatterSimulGrid();
+
+	//
+	//h_mForwardProj.proj = new float[mCTScanParas.dNumU * mCTScanParas.dNumV * mCTScanParas.projNum]();
+	//computeProj();
+	//saveProj();
+
+	cout << "无滤线栅的I0测试完成!" << endl
+		<< "标准闪烁体厚度 " << mCTScanParas.mScintilltorInfo.scintillatorThickness << " mm下，" << endl
+		<< "I0的光子数为：" << I0Standard << endl
+		<< "-------------------------------------" << endl;
+}
+
 void CBCTPolyForwardProjNoGrid::initGridInfo()
 {
 

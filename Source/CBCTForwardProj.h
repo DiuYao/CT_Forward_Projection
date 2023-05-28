@@ -18,6 +18,9 @@ public:
 	virtual void saveIandIAbsorb() = 0;
 
 	
+	virtual void testI0() = 0;
+	virtual void addStandardI0(float& I0Standard);
+
 	virtual void addI0() = 0;
 	virtual void saveI0() = 0;
 

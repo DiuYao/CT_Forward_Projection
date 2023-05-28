@@ -178,6 +178,86 @@ void CBCTPolyForwardProjGrid::computePolyForwProj()
 		<< "-------------------------------------" << endl;
 }
 
+void CBCTPolyForwardProjGrid::testI0()
+{
+	cout << "I0测试计算开始 ====>>>>" << endl;
+
+	// 初始化主存
+	h_mForwardProj.grid = new float[mCTScanParas.dNumU];
+	h_mForwardProj.I0 = new float[mCTScanParas.dNumU * mCTScanParas.dNumV]();
+	h_mForwardProj.detResponse = new float[mCTScanParas.dNumU * mCTScanParas.dNumV]();
+
+
+	computeParas();
+
+	// 读取能谱信息
+	h_mForwardProj.spectrumNormal = new float[mCTScanParas.specEnergyNum];
+	readSpecrtumNorm();
+
+	// 计算闪烁体厚度
+	h_mForwardProj.scintillatorPerThickness = new float[mCTScanParas.dNumU * mCTScanParas.dNumV];
+	computePerScinThinckness();
+
+	// 读取闪烁体质量衰减系数
+	h_mForwardProj.scintillatorLineAtten = new float[mCTScanParas.specEnergyNum];
+	readScintillatorMassAttu();
+
+	// 读取栅信息
+	h_mForwardProj.gridLineAtten = new float[mCTScanParas.specEnergyNum];
+	readGridMassAttu();
+
+	initGridInfo();
+	h_mForwardProj.grid = new float[mCTScanParas.dNumU];
+	mGrid = new Grid(h_mForwardProj.grid, mGridAndDetectorSystem);
+	mGrid->defGrid();
+
+
+	//initDeviceGrid(d_mForwardProj, d_mCoordinate, mCTScanSystemInfo, mCTScanParas, h_mForwardProj);
+
+	specIndex = 0;
+	for (size_t i = 0; i < mCTScanParas.specEnergyNum; i++)
+	{
+		mCTScanSystemInfo.spectrumVal = h_mForwardProj.spectrumNormal[i];
+		//readPhantom();
+
+		updateDetResponse();
+
+		mGrid->updataGrid(h_mForwardProj.gridLineAtten[i]);
+
+		//showProcessInfo();
+
+		//forwardProjGridGPU(d_mForwardProj, d_mCoordinate, mCTScanSystemInfo, mCTScanParas, h_mForwardProj);
+
+		//addIandIAbsorb();
+		addI0();
+
+		specIndex++;
+	}
+	//freeDeviceMemory(d_mForwardProj, d_mCoordinate);
+
+	//IPolyenergetic = new uint32[mCTScanParas.dNumU * mCTScanParas.dNumV * mCTScanParas.projNum];
+	//IPolyenergeticAbsorb = new uint32[mCTScanParas.dNumU * mCTScanParas.dNumV * mCTScanParas.projNum];
+
+	//convertIandIAbsorbDt();
+	//saveIandIAbsorb();
+	saveI0();
+
+
+	mGrid->getPeriodIncex(gridPeriodIndex);
+
+
+	//scatterSimulGrid();
+
+	//h_mForwardProj.proj = new float[mCTScanParas.dNumU * mCTScanParas.dNumV * mCTScanParas.projNum]();
+	//computeProj();
+	//saveProj();
+
+	DELETE(mGrid);
+
+	cout << "I0测试完成!" << endl
+		<< "-------------------------------------" << endl;
+}
+
 // 初始化栅信息
 void CBCTPolyForwardProjGrid::initGridInfo()
 {

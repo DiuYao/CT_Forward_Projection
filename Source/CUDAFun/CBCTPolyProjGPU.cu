@@ -575,7 +575,7 @@ void initDeviceSinMatGrid(PolyForwardProj& d_mPolyForwardProj, Coordinate& d_mCo
 	cudaError_t cudaStatus;
 
 	// Select Gpu
-	cudaStatus = cudaSetDevice(0);
+	cudaStatus = cudaSetDevice(GPUINDEX);
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed? \n Error: %s\n", cudaGetErrorString(cudaStatus));
 	}
@@ -745,7 +745,7 @@ void initDeviceSinMatNoResponseGrid(PolyForwardProj& d_mPolyForwardProj, Coordin
 	cudaError_t cudaStatus;
 
 	// Select Gpu
-	cudaStatus = cudaSetDevice(0);
+	cudaStatus = cudaSetDevice(GPUINDEX);
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed? \n Error: %s\n", cudaGetErrorString(cudaStatus));
 	}
@@ -992,7 +992,7 @@ void initDeviceSinMatNoGrid(PolyForwardProj& d_mPolyForwardProj, Coordinate& d_m
 	cudaError_t cudaStatus;
 
 	// Select Gpu
-	cudaStatus = cudaSetDevice(0);
+	cudaStatus = cudaSetDevice(GPUINDEX);
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed? \n Error: %s\n", cudaGetErrorString(cudaStatus));
 	}
@@ -1164,7 +1164,7 @@ void initDeviceSinMatNoResponseNoGrid(PolyForwardProj& d_mPolyForwardProj, Coord
 	cudaError_t cudaStatus;
 
 	// Select Gpu
-	cudaStatus = cudaSetDevice(0);
+	cudaStatus = cudaSetDevice(GPUINDEX);
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed? \n Error: %s\n", cudaGetErrorString(cudaStatus));
 	}

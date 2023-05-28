@@ -52,7 +52,7 @@ void CBCTSinMatPolyForwardProjGrid::computePolyForwProj()
 	h_mForwardProj.scintillatorPerThickness = new float[mCTScanParas.dNumU * mCTScanParas.dNumV];
 	computePerScinThinckness();
 
-	// 读取闪烁体质量衰减系数
+	// 读取闪烁体质量衰减系数 并计算其线性衰减系数
 	h_mForwardProj.scintillatorLineAtten = new float[mCTScanParas.specEnergyNum];
 	readScintillatorMassAttu();
 

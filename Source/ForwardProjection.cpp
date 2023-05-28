@@ -1,7 +1,7 @@
 #include "ForwardProjection.h"
 
 
-
+#define PHOTONS 8*1e4
 #define PNUM 256
 #define DNUM 600
 #define PHANTOMLEN 51.2   // mm
@@ -69,6 +69,15 @@ void ForwardProjection::forwardSinMatPolyProjNoGridNoResponse()
 
 }
 
+void ForwardProjection::forwarProjNoGridTestI0()
+{
+    inCTScanInfo();
+    inCTScanInfoNoGrid();
+
+    CBCTPolyForwardProjNoGrid mCBCTPolyForwardProjNoGrid = CBCTPolyForwardProjNoGrid(mCTScanParas, mFilePath);
+    mCBCTPolyForwardProjNoGrid.testI0();
+}
+
 void ForwardProjection::inCTScanInfo()
 {
     // 扫描系统参数
@@ -86,10 +95,10 @@ void ForwardProjection::inCTScanInfo()
     mCTScanParas.dSize = 0.278;  //mm
     mCTScanParas.sdd = 1050;
     mCTScanParas.sod = 630;
-    mCTScanParas.I0Val = 1 * 1e6;
+    mCTScanParas.I0Val = PHOTONS;
 
-    mCTScanParas.specEnergyNum = 80;
-    mCTScanParas.spectrumStep = 1;
+    mCTScanParas.specEnergyNum = 1;         // 能量离散个数
+    mCTScanParas.spectrumStep = 60;
 
     // 闪烁体信息
     mCTScanParas.mScintilltorInfo.scintillatorDensity = 4.510;      // 密度   g/cm^3
@@ -98,10 +107,10 @@ void ForwardProjection::inCTScanInfo()
     mCTScanParas.mScintilltorInfo.detResponseFactor = 1.0f;         // 响应因子
 
     // 路径
-    mFilePath.spectrumPath = "InputData/Spectrum/Spectrum_80kVp_1mmAl_GEMaxiray_1keV_Normal.txt";
+    mFilePath.spectrumPath = "InputData/Spectrum/Spectrum_45keV_1mmAl.txt";
     mFilePath.phantomPath = "InputData/Phantom/Al";     // 单材质时可不输入，后续输入密度路径
-    mFilePath.gridPath = "InputData/Grid/Pb_[1_80]keV_1keV.txt";
-    mFilePath.scintillatorPath = "InputData/Scintillator/CsI_[1_80]keV_1keV.txt";
+    mFilePath.gridPath = "InputData/Grid/Pb_60keV.txt";
+    mFilePath.scintillatorPath = "InputData/Scintillator/CsI_60keV.txt";
     mFilePath.convKernelGridPath = "InputData/ConvKernel/ConvKernelGrid_601.raw";
     
 }
@@ -113,9 +122,9 @@ void ForwardProjection::inCTScanInfoGrid()
 
     // 栅信息
     mGridInfo.FD                        = 1400;         // mm
-    mGridInfo.h                         = 2;            // mm
-    mGridInfo.leadStripsWidth           = 2780;          // um
-    mGridInfo.leadStripsDistance        = 2780;           // um
+    mGridInfo.h                         = 1;            // mm
+    mGridInfo.leadStripsWidth           = 278*10;          // um
+    mGridInfo.leadStripsDistance        = 278*10;           // um
     mGridInfo.materialGridInterspacer   = "Air";
     mGridInfo.materialGridStrip         = "Pb";
     mGridInfo.rhoGS                     = 1.135E+01;    // g/cm^3
@@ -130,7 +139,7 @@ void ForwardProjection::inCTScanInfoGridNoResponse()
 
 void ForwardProjection::inCTScanInfoSinMat()
 {
-    mFilePath.phantomMAttenPath = "InputData/Phantom/Al_[1_80]keV_1keV.dat";
+    mFilePath.phantomMAttenPath = "InputData/Phantom/Al_60keV.dat";
     mFilePath.phantomPath = "InputData/Phantom/Al_Density_256x256x256_float.raw";
 }
 
@@ -143,4 +152,9 @@ void ForwardProjection::inCTScanInfoNoGrid()
 void ForwardProjection::inCTScanInfoNoGridNoResponse()
 {
     mFilePath.IEPath = "OutputResult/ForwardProjection/NoGrid/NoResponse";
+}
+
+void ForwardProjection::inCTScanInfoNoGridTestI0()
+{
+    mFilePath.IEPath = "OutputResult/ForwardProjection/NoGrid";
 }

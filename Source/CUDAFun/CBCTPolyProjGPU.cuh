@@ -1,6 +1,6 @@
 /*
 * GPU程序所用的栅数据和探测器响应数据都是计算后的系数
-* 透过系数和吸收吸收系数
+* 透过系数和吸收系数
 */
 
 #include "device_launch_parameters.h"
@@ -23,7 +23,7 @@ cudaFree(varP); \
 #define BLOCKSIZEY 8
 #define BLOCKSIZEZ 8
 
-
+#define GPUINDEX 1
 
 struct PolyForwardProj; 
 struct Coordinate;
