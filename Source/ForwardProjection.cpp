@@ -1,7 +1,8 @@
 #include "ForwardProjection.h"
 
 
-#define PHOTONS 8*1e4
+#define PHOTONS 60835.1//8*1e4
+//#define PHOTONS 8*1e4
 #define PNUM 256
 #define DNUM 600
 #define PHANTOMLEN 51.2   // mm
@@ -122,9 +123,9 @@ void ForwardProjection::inCTScanInfoGrid()
 
     // 栅信息
     mGridInfo.FD                        = 1400;         // mm
-    mGridInfo.h                         = 1;            // mm
-    mGridInfo.leadStripsWidth           = 278*10;          // um
-    mGridInfo.leadStripsDistance        = 278*10;           // um
+    mGridInfo.h                         = 1.5;          // mm
+    mGridInfo.leadStripsWidth           = 278*10;          // 栅条宽度 um
+    mGridInfo.leadStripsDistance        = 278*10;           // 栅条距离 um
     mGridInfo.materialGridInterspacer   = "Air";
     mGridInfo.materialGridStrip         = "Pb";
     mGridInfo.rhoGS                     = 1.135E+01;    // g/cm^3

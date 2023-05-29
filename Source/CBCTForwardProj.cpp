@@ -80,12 +80,12 @@ void CBCTForwardProj::convertIandIAbsorbDt()
 {
 	for (size_t i = 0; i < mCTScanParas.dNumU * mCTScanParas.dNumV * mCTScanParas.projNum; i++)
 	{
-		IPolyenergetic[i] = roundf(I[i]);
+		IPolyenergetic[i] = floorf(I[i]);
 	}
 
 	for (size_t i = 0; i < mCTScanParas.dNumU * mCTScanParas.dNumV * mCTScanParas.projNum; i++)
 	{
-		IPolyenergeticAbsorb[i] = roundf(IAbsorb[i]);
+		IPolyenergeticAbsorb[i] = floorf(IAbsorb[i]);
 	}
 }
 

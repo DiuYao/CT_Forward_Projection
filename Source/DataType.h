@@ -41,7 +41,7 @@ struct CTScanParas
 
 	float dSize;							 // 探测器分辨率   mm
 
-	uint32 I0Val;							// 亮场
+	float I0Val;							// 亮场
 	int spectrumStep;						// 能谱间隔
 	int specEnergyNum;						// 离散化能谱个数
 

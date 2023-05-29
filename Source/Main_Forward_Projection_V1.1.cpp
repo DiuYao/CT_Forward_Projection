@@ -22,8 +22,8 @@ int main()
     ForwardProjection mForwardProjection;
     //mForwardProjection.forwardPolyProjGrid();
     //mForwardProjection.forwardPolyProjNoGrid();
-    mForwardProjection.forwardSinMatPolyProjGrid();
-    //mForwardProjection.forwardSinMatPolyProjGridNoResponse();
+    //mForwardProjection.forwardSinMatPolyProjGrid();
+    mForwardProjection.forwardSinMatPolyProjGridNoResponse();
     //mForwardProjection.forwardSinMatPolyProjNoGrid();
     //mForwardProjection.forwardSinMatPolyProjNoGridNoResponse();
     
