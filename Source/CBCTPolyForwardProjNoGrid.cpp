@@ -338,7 +338,7 @@ void CBCTPolyForwardProjNoGrid::scatterSimulGrid()
 void CBCTPolyForwardProjNoGrid::saveProj()
 {
 	// ±£¥ÊProj
-	string tempPath = mFilePath.IEPath + "/Projection_NoGrid_Poly_" + to_string(mCTScanParas.dNumU) + "x" + to_string(mCTScanParas.dNumV) + "_float.raw";
+	string tempPath = mFilePath.IEPath + "/Projection_NoGrid_Poly_" + to_string(mCTScanParas.dNumU) + "x" + to_string(mCTScanParas.dNumV) + "x" + to_string(mCTScanParas.projNum) + "_float.raw";
 
 	ofstream ofs;
 	ofs.open(tempPath, ios::out | ios::binary);

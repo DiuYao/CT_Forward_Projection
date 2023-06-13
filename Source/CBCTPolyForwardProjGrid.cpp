@@ -40,6 +40,8 @@ CBCTPolyForwardProjGrid::CBCTPolyForwardProjGrid(CTScanParas inCTScanParas, Grid
 	mCTScanParas.specEnergyNum = inCTScanParas.specEnergyNum;
 
 	mCTScanParas.I0Val = inCTScanParas.I0Val;
+	mCTScanParas.focalSpotSize = inCTScanParas.focalSpotSize;
+
 	mCTScanParas.mScintilltorInfo.scintillatorName = inCTScanParas.mScintilltorInfo.scintillatorName;
 	mCTScanParas.mScintilltorInfo.scintillatorThickness = inCTScanParas.mScintilltorInfo.scintillatorThickness;
 	mCTScanParas.mScintilltorInfo.scintillatorThicknessErr = inCTScanParas.mScintilltorInfo.scintillatorThicknessErr;
@@ -82,6 +84,8 @@ CBCTPolyForwardProjGrid::~CBCTPolyForwardProjGrid()
 	DELETEARR(h_mForwardProj.scintillatorLineAtten);
 	DELETEARR(h_mForwardProj.scintillatorPerThickness);
 	DELETEARR(h_mForwardProj.proj);
+	DELETEARR(h_mForwardProj.foSpOffsetU);
+	DELETEARR(h_mForwardProj.foSpOffsetV);
 
 	DELETEARR(I);
 	DELETEARR(IPolyenergetic);
@@ -372,6 +376,7 @@ void CBCTPolyForwardProjGrid::showProcessInfoNoResponse()
 	cout << "滤线栅线性衰减系数: " << h_mForwardProj.gridLineAtten[specIndex] << " 1/mm" << endl;
 }
 
+
 void CBCTPolyForwardProjGrid::scatterSimulGrid()
 {
 }
@@ -379,7 +384,7 @@ void CBCTPolyForwardProjGrid::scatterSimulGrid()
 void CBCTPolyForwardProjGrid::saveProj()
 {
 	// 保存Proj
-	string tempPath = mFilePath.IEPath + "/Projection_Grid_Poly_" + to_string(mCTScanParas.dNumU) + "x" + to_string(mCTScanParas.dNumV) + "_float.raw";
+	string tempPath = mFilePath.IEPath + "/Projection_Grid_Poly_" + to_string(mCTScanParas.dNumU) + "x" + to_string(mCTScanParas.dNumV) + "x" + to_string(mCTScanParas.projNum) + "_float.raw";
 
 	ofstream ofs;
 	ofs.open(tempPath, ios::out | ios::binary);

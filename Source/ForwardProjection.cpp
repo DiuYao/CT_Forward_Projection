@@ -1,8 +1,9 @@
 #include "ForwardProjection.h"
 
 
-#define PHOTONS 60835.1//8*1e4
-//#define PHOTONS 8*1e4
+//#define PHOTONS 60764.1
+#define PHOTONS 8*1e4
+//#define PHOTONS 6.9*1e4
 #define PNUM 256
 #define DNUM 600
 #define PHANTOMLEN 51.2   // mm
@@ -25,6 +26,16 @@ void ForwardProjection::forwardSinMatPolyProjGrid()
 
     CBCTSinMatPolyForwardProjGrid mCBCTSinMatPolyForwardProjGrid = CBCTSinMatPolyForwardProjGrid(mCTScanParas, mGridInfo, mFilePath);
     mCBCTSinMatPolyForwardProjGrid.computePolyForwProj();
+}
+
+void ForwardProjection::forwardSinMatPolyProjGridFoSp()
+{
+    inCTScanInfo();
+    inCTScanInfoGrid();
+    inCTScanInfoSinMat();
+
+    CBCTSinMatPolyForwardProjGrid mCBCTSinMatPolyForwardProjGrid = CBCTSinMatPolyForwardProjGrid(mCTScanParas, mGridInfo, mFilePath);
+    mCBCTSinMatPolyForwardProjGrid.computePolyForwProjFoSp();
 }
 
 void ForwardProjection::forwardSinMatPolyProjGridNoResponse()
@@ -96,10 +107,13 @@ void ForwardProjection::inCTScanInfo()
     mCTScanParas.dSize = 0.278;  //mm
     mCTScanParas.sdd = 1050;
     mCTScanParas.sod = 630;
+
+    mCTScanParas.focalSpotSize = 0.6;   // mm
+
     mCTScanParas.I0Val = PHOTONS;
 
     mCTScanParas.specEnergyNum = 1;         // 能量离散个数
-    mCTScanParas.spectrumStep = 60;
+    mCTScanParas.spectrumStep = 73;
 
     // 闪烁体信息
     mCTScanParas.mScintilltorInfo.scintillatorDensity = 4.510;      // 密度   g/cm^3
@@ -108,7 +122,7 @@ void ForwardProjection::inCTScanInfo()
     mCTScanParas.mScintilltorInfo.detResponseFactor = 1.0f;         // 响应因子
 
     // 路径
-    mFilePath.spectrumPath = "InputData/Spectrum/Spectrum_45keV_1mmAl.txt";
+    mFilePath.spectrumPath = "InputData/Spectrum/Spectrum_60keV_1mmAl.txt";
     mFilePath.phantomPath = "InputData/Phantom/Al";     // 单材质时可不输入，后续输入密度路径
     mFilePath.gridPath = "InputData/Grid/Pb_60keV.txt";
     mFilePath.scintillatorPath = "InputData/Scintillator/CsI_60keV.txt";
@@ -123,9 +137,9 @@ void ForwardProjection::inCTScanInfoGrid()
 
     // 栅信息
     mGridInfo.FD                        = 1400;         // mm
-    mGridInfo.h                         = 1.5;          // mm
-    mGridInfo.leadStripsWidth           = 278*10;          // 栅条宽度 um
-    mGridInfo.leadStripsDistance        = 278*10;           // 栅条距离 um
+    mGridInfo.h                         = 1.5f;          // mm
+    mGridInfo.leadStripsWidth           = 139;          // 栅条宽度 um
+    mGridInfo.leadStripsDistance        = 139;           // 栅条距离 um
     mGridInfo.materialGridInterspacer   = "Air";
     mGridInfo.materialGridStrip         = "Pb";
     mGridInfo.rhoGS                     = 1.135E+01;    // g/cm^3

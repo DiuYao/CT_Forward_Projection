@@ -76,7 +76,7 @@ void Grid::computeunitH()
 {
     for (size_t i = 0; i < discreteUnitNums; i++)
     {
-        distanceCenter[i] = i + 0.5 - (float)discreteUnitNums / 2;
+        distanceCenter[i] = i + 0.5 - (float)discreteUnitNums / 2;  // 加0.5是因为离散化单位是1um
     }
 
     for (size_t i = 0; i < discreteUnitNums; i++)

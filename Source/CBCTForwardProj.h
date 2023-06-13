@@ -28,6 +28,8 @@ public:
 	virtual void computePerScinThinckness();
 	virtual void updateDetResponse();
 
+	virtual void computeFoSpOffset();
+
 	// ¶ÁÈ¡Êý¾Ý
 	virtual void readSpecrtumNorm();
 	virtual void readGridMassAttu();

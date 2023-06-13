@@ -29,7 +29,7 @@ MANIFEST
 
 # 自定义忽略文件
 .vs/
-
+#
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

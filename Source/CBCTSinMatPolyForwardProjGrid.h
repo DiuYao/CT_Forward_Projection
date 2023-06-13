@@ -10,6 +10,7 @@ public:
 
 	virtual void computePolyForwProj();
 	void computePolyForwProjNoResponse();
+	void computePolyForwProjFoSp();
 
 private:
 

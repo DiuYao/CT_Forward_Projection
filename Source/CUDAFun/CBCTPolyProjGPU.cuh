@@ -23,9 +23,9 @@ cudaFree(varP); \
 #define BLOCKSIZEY 8
 #define BLOCKSIZEZ 8
 
-#define GPUINDEX 1
+#define GPUINDEX 0
 
-struct PolyForwardProj; 
+//struct PolyForwardProj; 
 struct Coordinate;
 struct CTScanSystemInfo;
 struct CTScanParas;
@@ -43,11 +43,15 @@ void forwardSinMatNoResponseProjNoGridGPU(PolyForwardProj & d_mPolyForwardProj, 
 /* ************ 初始化 ************ */
 void initDeviceGrid(PolyForwardProj & d_mPolyForwardProj, Coordinate & d_mCoordinate, CTScanSystemInfo mCTScanSystemInfo, CTScanParas mCTScanParas, PolyForwardProj & h_mPolyForwardProj);
 void initDeviceSinMatGrid(PolyForwardProj & d_mPolyForwardProj, Coordinate & d_mCoordinate, CTScanSystemInfo mCTScanSystemInfo, CTScanParas mCTScanParas, PolyForwardProj & h_mPolyForwardProj);
+void initDeviceSinMatFoSpSiGrid(PolyForwardProj & d_mPolyForwardProj, Coordinate & d_mCoordinate, CTScanSystemInfo mCTScanSystemInfo, CTScanParas mCTScanParas, PolyForwardProj & h_mPolyForwardProj);
 void initDeviceSinMatNoResponseGrid(PolyForwardProj & d_mPolyForwardProj, Coordinate & d_mCoordinate, CTScanSystemInfo mCTScanSystemInfo, CTScanParas mCTScanParas, PolyForwardProj & h_mPolyForwardProj);
 
 void initDeviceNoGrid(PolyForwardProj & d_mPolyForwardProj, Coordinate & d_mCoordinate, CTScanSystemInfo mCTScanSystemInfo, CTScanParas mCTScanParas, PolyForwardProj & h_mPolyForwardProj);
 void initDeviceSinMatNoGrid(PolyForwardProj & d_mPolyForwardProj, Coordinate & d_mCoordinate, CTScanSystemInfo mCTScanSystemInfo, CTScanParas mCTScanParas, PolyForwardProj & h_mPolyForwardProj);
 void initDeviceSinMatNoResponseNoGrid(PolyForwardProj & d_mPolyForwardProj, Coordinate & d_mCoordinate, CTScanSystemInfo mCTScanSystemInfo, CTScanParas mCTScanParas, PolyForwardProj & h_mPolyForwardProj);
+
+
+/* ******** */
 
 
 /* GPU内存申请 */
@@ -64,9 +68,13 @@ void freeDeviceMemory(PolyForwardProj & d_mPolyForwardProj, Coordinate & d_mCoor
 __global__ void computeIntPointCoordinatesKernel(Coordinate d_Coordinate, CTScanSystemInfo mCTScanSystemInfo, CTScanParas mCTScanParas);
 
 __global__ void transformKernel(PolyForwardProj d_mPolyForwardProj, Coordinate d_Coordinate, cudaTextureObject_t texObj, CTScanSystemInfo mCTScanSystemInfo, CTScanParas mCTScanParas, float theta);
+__global__ void transformFocalSpotKernel(PolyForwardProj d_mPolyForwardProj, Coordinate d_Coordinate, cudaTextureObject_t texObj, CTScanSystemInfo mCTScanSystemInfo, CTScanParas mCTScanParas, int angleIndex);
+
+__global__ void projOffsetMatchKernel(PolyForwardProj d_mPolyForwardProj, cudaTextureObject_t texObj, CTScanParas mCTScanParas);
 
 // 计算单材质密度投影的核函数
 __global__ void computeSinMatIndensityProjKernel(PolyForwardProj d_mPolyForwardProj, CTScanSystemInfo mCTScanSystemInfo, CTScanParas mCTScanParas, size_t num);
+
 
 /* *************** Grid ********************* */ 
 // 带栅的多材质多色有探元响应的正投核函数
@@ -101,6 +109,7 @@ void initTexture3D(cudaTextureObject_t& texObj, cudaArray_t &d_cuArray3D, float*
 // 更新纹理, 更新cudaArray
 void updateTex(cudaArray_t &d_cuArray3D, float* h_data, cudaExtent volumeSize);
 
-
+// 创建纹理内存
+void createTexture3D(cudaTextureObject_t & texObj, float* h_data, size_t width, size_t height, size_t depth);
 
 

@@ -11,6 +11,7 @@ class ForwardProjection
 public:
 	void forwardPolyProjGrid();
 	void forwardSinMatPolyProjGrid();
+	void forwardSinMatPolyProjGridFoSp();
 	void forwardSinMatPolyProjGridNoResponse();
 
 	void forwardPolyProjNoGrid();

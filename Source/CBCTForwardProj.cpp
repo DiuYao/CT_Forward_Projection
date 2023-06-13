@@ -4,10 +4,11 @@
 #include <cmath>
 #include <direct.h>
 #include <corecrt_io.h>
+#include <ctime>
 
 #include "CBCTForwardProj.h"
 
-
+#define PI acosf(-1)
 
 using namespace std;
 
@@ -117,6 +118,31 @@ void CBCTForwardProj::updateDetResponse()
 	{
 		h_mForwardProj.detResponse[i] = mCTScanParas.mScintilltorInfo.detResponseFactor * (1 - expf(-h_mForwardProj.scintillatorLineAtten[specIndex] * h_mForwardProj.scintillatorPerThickness[i]));
 	}
+}
+
+void CBCTForwardProj::computeFoSpOffset()
+{
+	srand(time(0));
+	float foSpRadius = mCTScanParas.focalSpotSize / 2.0f;
+	int tempFoSpSize = mCTScanParas.focalSpotSize * 10000;
+
+	float offsetU = 0.0f;
+	float offsetV = 0.0f;
+
+	for (size_t i = 0; i < mCTScanParas.projNum; i++)
+	{
+		offsetU = -foSpRadius + (rand() % tempFoSpSize) / 10000.0f;
+		offsetV = -foSpRadius + (rand() % tempFoSpSize) / 10000.0f;
+		while (offsetU * offsetU + offsetV * offsetV > PI * foSpRadius * foSpRadius)
+		{
+			offsetU = -foSpRadius + (rand() % tempFoSpSize) / 10000.0f;
+			offsetV = -foSpRadius + (rand() % tempFoSpSize) / 10000.0f;
+		}
+
+		h_mForwardProj.foSpOffsetU[i] = offsetU;
+		h_mForwardProj.foSpOffsetV[i] = offsetV;
+	}
+
 }
 
 void CBCTForwardProj::readSpecrtumNorm()
@@ -256,6 +282,8 @@ void CBCTForwardProj::showScanSystemInfo()
 	cout << "FOV(直径×长):"; cout.width(8); cout << 2 * mCTScanSystemInfo.FOVR << "×" << 2 * mCTScanSystemInfo.FOVH << " mm" << endl;
 	cout.width(15);
 	cout << "模体像素大小:"; cout << mCTScanSystemInfo.pSizeX << "×" << mCTScanSystemInfo.pSizeY << "×" << mCTScanSystemInfo.pSizeZ << " mm" << endl;
+	cout.width(15);
+	cout << "程序中初始光子数(非I0):"; cout << mCTScanParas.I0Val << endl;
 	cout << endl;
 
 	/*cout.setf(ios::left);

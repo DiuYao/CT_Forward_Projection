@@ -38,10 +38,13 @@ struct CTScanParas
 	size_t dNumU, dNumV;					// 探测器大小, dNumU-横向, dNumV--纵向
 	float sod, sdd;							// 单位 mm
 	int rotatedDirection;					// 扫描时的旋转方向
-
+	
 	float dSize;							 // 探测器分辨率   mm
 
-	float I0Val;							// 亮场
+	float I0Val;							// 程序中的光子初始数量，注意，在有探元响应时和I0不等
+	
+	float focalSpotSize;					// 焦斑大小, 单位 mm
+
 	int spectrumStep;						// 能谱间隔
 	int specEnergyNum;						// 离散化能谱个数
 
@@ -102,10 +105,17 @@ struct CTScanSystemInfo
 	float phantomMAtten;	// 单材质时的质量衰减系数 单位 cm^2/g
 };
 
+// 焦斑，焦点移动
+//struct FocalSpotOffset
+//{
+//	float* offsetU, * offsetV;
+//};
+
 // 坐标点
 struct Coordinate
 {
 	float* imgIntX, * imgIntY, * imgIntZ;
+	//FocalSpotOffset mFoSpotOffset;
 	//float* detU, * detV;
 };
 
@@ -123,6 +133,8 @@ struct PolyForwardProj
 	float* scintillatorLineAtten;			// 闪烁体线性衰减系数  单位 cm^2/g
 	float* scintillatorPerThickness;		// 每个闪烁体厚度			单位 mm
 	float* detResponse;						// 探测器单元响应
+
+	float* foSpOffsetU, * foSpOffsetV;		// 焦点偏移量
 };
 typedef PolyForwardProj ForwardProj;
 
