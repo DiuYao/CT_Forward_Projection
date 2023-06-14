@@ -16,6 +16,7 @@ public:
 
 	void forwardPolyProjNoGrid();
 	void forwardSinMatPolyProjNoGrid();
+	void forwardSinMatPolyProjNoGridFoSp();
 	void forwardSinMatPolyProjNoGridNoResponse();
 
 	void forwarProjNoGridTestI0();

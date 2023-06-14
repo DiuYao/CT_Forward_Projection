@@ -48,6 +48,7 @@ void initDeviceSinMatNoResponseGrid(PolyForwardProj & d_mPolyForwardProj, Coordi
 
 void initDeviceNoGrid(PolyForwardProj & d_mPolyForwardProj, Coordinate & d_mCoordinate, CTScanSystemInfo mCTScanSystemInfo, CTScanParas mCTScanParas, PolyForwardProj & h_mPolyForwardProj);
 void initDeviceSinMatNoGrid(PolyForwardProj & d_mPolyForwardProj, Coordinate & d_mCoordinate, CTScanSystemInfo mCTScanSystemInfo, CTScanParas mCTScanParas, PolyForwardProj & h_mPolyForwardProj);
+void initDeviceSinMatFoSpSiNoGrid(PolyForwardProj & d_mPolyForwardProj, Coordinate & d_mCoordinate, CTScanSystemInfo mCTScanSystemInfo, CTScanParas mCTScanParas, PolyForwardProj & h_mPolyForwardProj);
 void initDeviceSinMatNoResponseNoGrid(PolyForwardProj & d_mPolyForwardProj, Coordinate & d_mCoordinate, CTScanSystemInfo mCTScanSystemInfo, CTScanParas mCTScanParas, PolyForwardProj & h_mPolyForwardProj);
 
 

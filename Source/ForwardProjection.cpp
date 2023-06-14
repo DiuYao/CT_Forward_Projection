@@ -69,6 +69,16 @@ void ForwardProjection::forwardSinMatPolyProjNoGrid()
 
 }
 
+void ForwardProjection::forwardSinMatPolyProjNoGridFoSp()
+{
+    inCTScanInfo();
+    inCTScanInfoNoGrid();
+    inCTScanInfoSinMat();
+
+    CBCTSinMatPolyForwardProjNoGrid mCBCTSinMatPolyForwardProjNoGrid = CBCTSinMatPolyForwardProjNoGrid(mCTScanParas, mGridInfo, mFilePath);
+    mCBCTSinMatPolyForwardProjNoGrid.computePolyForwProjFoSp();
+}
+
 void ForwardProjection::forwardSinMatPolyProjNoGridNoResponse()
 {
     inCTScanInfo();

@@ -41,6 +41,8 @@ CBCTPolyForwardProjNoGrid::CBCTPolyForwardProjNoGrid(CTScanParas inCTScanParas, 
 	mCTScanParas.specEnergyNum = inCTScanParas.specEnergyNum;
 
 	mCTScanParas.I0Val = inCTScanParas.I0Val;
+	mCTScanParas.focalSpotSize = inCTScanParas.focalSpotSize;
+
 	mCTScanParas.mScintilltorInfo.scintillatorName = inCTScanParas.mScintilltorInfo.scintillatorName;
 	mCTScanParas.mScintilltorInfo.scintillatorThickness = inCTScanParas.mScintilltorInfo.scintillatorThickness;
 	mCTScanParas.mScintilltorInfo.scintillatorThicknessErr = inCTScanParas.mScintilltorInfo.scintillatorThicknessErr;
@@ -71,6 +73,8 @@ CBCTPolyForwardProjNoGrid::~CBCTPolyForwardProjNoGrid()
 	DELETEARR(h_mForwardProj.scintillatorLineAtten);
 	DELETEARR(h_mForwardProj.scintillatorPerThickness);
 	DELETEARR(h_mForwardProj.proj);
+	DELETEARR(h_mForwardProj.foSpOffsetU);
+	DELETEARR(h_mForwardProj.foSpOffsetV);
 
 	DELETEARR(I);
 	DELETEARR(IPolyenergetic);

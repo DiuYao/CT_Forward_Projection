@@ -739,6 +739,7 @@ void initDeviceSinMatGrid(PolyForwardProj& d_mPolyForwardProj, Coordinate& d_mCo
 	// 探测器响应数据
 	cudaMalloc(&d_mPolyForwardProj.detResponse, mCTScanParas.dNumU * mCTScanParas.dNumV * sizeof(float));
 }
+
 // 初始化，单材质、有栅、有响应、有焦斑
 void initDeviceSinMatFoSpSiGrid(PolyForwardProj& d_mPolyForwardProj, Coordinate& d_mCoordinate, CTScanSystemInfo mCTScanSystemInfo, CTScanParas mCTScanParas, PolyForwardProj& h_mPolyForwardProj)
 {
@@ -1372,6 +1373,222 @@ void initDeviceSinMatNoGrid(PolyForwardProj& d_mPolyForwardProj, Coordinate& d_m
 	// 探测器响应数据
 	cudaMalloc(&d_mPolyForwardProj.detResponse, mCTScanParas.dNumU * mCTScanParas.dNumV * sizeof(float));
 
+
+}
+
+void initDeviceSinMatFoSpSiNoGrid(PolyForwardProj& d_mPolyForwardProj, Coordinate& d_mCoordinate, CTScanSystemInfo mCTScanSystemInfo, CTScanParas mCTScanParas, PolyForwardProj& h_mPolyForwardProj)
+{
+	cudaError_t cudaStatus;
+
+	// Select Gpu
+	cudaStatus = cudaSetDevice(GPUINDEX);
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed? \n Error: %s\n", cudaGetErrorString(cudaStatus));
+	}
+
+	// 初始化device
+	cudaDeviceSynchronize();    // 确保无CUDA程序运行
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess) {
+		printf("Error: %s\n", cudaGetErrorString(cudaStatus));
+	}
+	cudaDeviceReset();  // 清理缓存
+
+
+	// Allocate GPU buffers
+	size_t sizeIntPoint = mCTScanSystemInfo.intNum * mCTScanParas.dNumU * mCTScanParas.dNumV * sizeof(float);
+
+	// 积分点坐标
+	cudaStatus = cudaMalloc(&d_mCoordinate.imgIntX, sizeIntPoint);
+	if (cudaStatus != cudaSuccess)
+	{
+		fprintf(stderr, "Variable imageCoordinate->x cudaMalloc failed! \n Error Code: %d --- %s! \n\n", cudaStatus, cudaGetErrorString(cudaStatus));
+	}
+
+	cudaStatus = cudaMalloc(&d_mCoordinate.imgIntY, sizeIntPoint);
+	if (cudaStatus != cudaSuccess)
+	{
+		fprintf(stderr, "Variable imageCoordinate->y cudaMalloc failed! \n Error Code: %d --- %s! \n\n", cudaStatus, cudaGetErrorString(cudaStatus));
+	}
+
+	cudaStatus = cudaMalloc(&d_mCoordinate.imgIntZ, sizeIntPoint);
+	if (cudaStatus != cudaSuccess)
+	{
+		fprintf(stderr, "Variable imageCoordinate->z cudaMalloc failed! \n Error Code: %d --- %s! \n\n", cudaStatus, cudaGetErrorString(cudaStatus));
+	}
+
+
+	/*cudaMalloc(&d_mCoordinate->detU, mCTScanParas.dNumU * sizeof(float));
+	cudaMalloc(&d_mCoordinate->detV, mCTScanParas.dNumV * sizeof(float));*/
+
+	//cudaMallocManaged();
+
+	dim3 blockSizeIPC(BLOCKSIZEX, BLOCKSIZEY, BLOCKSIZEZ);
+	dim3 gridSizeIPC((mCTScanSystemInfo.intNum - 1) / blockSizeIPC.x + 10, (mCTScanParas.dNumU - 1) / blockSizeIPC.y + 10, (mCTScanParas.dNumV - 1) / blockSizeIPC.z + 10);
+
+	computeIntPointCoordinatesKernel << <gridSizeIPC, blockSizeIPC >> > (d_mCoordinate, mCTScanSystemInfo, mCTScanParas);
+
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "computeIntPointCoordinatesKernel launch failed: %s! \n\n", cudaGetErrorString(cudaStatus));
+	}
+	cudaStatus = cudaDeviceSynchronize();
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching computeIntPointCoordinatesKernel!\n Error: %s!\n\n", cudaStatus, cudaGetErrorString(cudaStatus));
+	}
+
+	// 检查
+	/*float* tempIntX = new float[mCTScanSystemInfo.intNum * mCTScanParas.dNumU * mCTScanParas.dNumV];
+	cudaMemcpy(tempIntX, d_mCoordinate->imgIntX, mCTScanSystemInfo.intNum * mCTScanParas.dNumU * mCTScanParas.dNumV * sizeof(float), cudaMemcpyDeviceToHost);
+
+	float* tempIntY = new float[mCTScanSystemInfo.intNum * mCTScanParas.dNumU * mCTScanParas.dNumV];
+	cudaMemcpy(tempIntY, d_mCoordinate->imgIntY, mCTScanSystemInfo.intNum * mCTScanParas.dNumU * mCTScanParas.dNumV * sizeof(float), cudaMemcpyDeviceToHost);
+
+	float* tempIntZ = new float[mCTScanSystemInfo.intNum * mCTScanParas.dNumU * mCTScanParas.dNumV];
+	cudaMemcpy(tempIntZ, d_mCoordinate->imgIntZ, mCTScanSystemInfo.intNum * mCTScanParas.dNumU * mCTScanParas.dNumV * sizeof(float), cudaMemcpyDeviceToHost);*/
+
+
+	// 初始化纹理
+	volumeSize = make_cudaExtent(mCTScanParas.pNumX, mCTScanParas.pNumY, mCTScanParas.pNumZ);
+	initTexture3D(texObj, d_cuArray3D, h_mPolyForwardProj.phantom, volumeSize);
+
+
+	// Allocate GPU buffers for temporary output variables
+	cudaStatus = cudaMalloc(&d_mPolyForwardProj.phantom, sizeIntPoint);   // 存储积分点处像素值旋转后的数据
+	if (cudaStatus != cudaSuccess)
+	{
+		fprintf(stderr, "Variable d_mPolyForwardProj.phantom cudaMalloc failed! \n Error Code: %d --- %s! \n\n", cudaStatus, cudaGetErrorString(cudaStatus));
+	}
+
+	// 计算 密度图像的Proj
+	// 密度图像的Proj
+	cudaMalloc(&d_mPolyForwardProj.proj, sizeIntPoint);
+	if (cudaStatus != cudaSuccess)
+	{
+		fprintf(stderr, "Variable d_mPolyForwardProj.proj cudaMalloc failed! \n Error Code: %d --- %s! \n\n", cudaStatus, cudaGetErrorString(cudaStatus));
+	}
+
+	// 焦点偏移数据发送
+	size_t sizeFoSpOffset = mCTScanParas.projNum * sizeof(float);
+
+	cudaStatus = cudaMalloc(&d_mPolyForwardProj.foSpOffsetU, sizeFoSpOffset);
+	if (cudaStatus != cudaSuccess)
+	{
+		fprintf(stderr, "Variable d_mPolyForwardProj.foSpOffsetU cudaMalloc failed! \n Error Code: %d --- %s! \n\n", cudaStatus, cudaGetErrorString(cudaStatus));
+	}
+
+	cudaStatus = cudaMalloc(&d_mPolyForwardProj.foSpOffsetV, sizeFoSpOffset);
+	if (cudaStatus != cudaSuccess)
+	{
+		fprintf(stderr, "Variable d_mPolyForwardProj.foSpOffsetV cudaMalloc failed! \n Error Code: %d --- %s! \n\n", cudaStatus, cudaGetErrorString(cudaStatus));
+	}
+
+	// 传输数据
+	cudaStatus = cudaMemcpy(d_mPolyForwardProj.foSpOffsetU, h_mPolyForwardProj.foSpOffsetU, sizeFoSpOffset, cudaMemcpyHostToDevice);
+	if (cudaStatus != cudaSuccess)
+	{
+		fprintf(stderr, "Variable d_mPolyForwardProj.foSpOffsetU cudaMemcpy failed! \n Error Code: %d --- %s! \n\n", cudaStatus, cudaGetErrorString(cudaStatus));
+	}
+
+	cudaStatus = cudaMemcpy(d_mPolyForwardProj.foSpOffsetV, h_mPolyForwardProj.foSpOffsetV, sizeFoSpOffset, cudaMemcpyHostToDevice);
+	if (cudaStatus != cudaSuccess)
+	{
+		fprintf(stderr, "Variable d_mPolyForwardProj.foSpOffsetV cudaMemcpy failed! \n Error Code: %d --- %s! \n\n", cudaStatus, cudaGetErrorString(cudaStatus));
+	}
+
+	// GPU计时
+	cudaEvent_t g_start, g_stop;
+	cudaEventCreate(&g_start);
+	cudaEventCreate(&g_stop);
+	cudaEventRecord(g_start, 0);
+
+	// Kernel parameters
+	dim3 blockSizeTrans(BLOCKSIZEX, BLOCKSIZEY, BLOCKSIZEZ);
+	dim3 gridSizeTrans((mCTScanSystemInfo.intNum - 1) / blockSizeTrans.x + 1, (mCTScanParas.dNumU - 1) / blockSizeTrans.y + 1, (mCTScanParas.dNumV - 1) / blockSizeTrans.z + 1);
+
+	dim3 blockSizeProj(BLOCKSIZEY, BLOCKSIZEZ);
+	dim3 gridSizeProj((mCTScanParas.dNumU - 1) / blockSizeProj.x + 1, (mCTScanParas.dNumV - 1) / blockSizeProj.y + 1);
+
+	float angle = 0.0f;
+	for (size_t i = 0; i < mCTScanParas.projNum; i++)
+	{
+
+		//angle = mCTScanSystemInfo.rotatedDirection * i * mCTScanSystemInfo.thetaStep / 180 * PI;   // 计算当前旋转角，并转换为弧度制
+
+		transformFocalSpotKernel << <gridSizeTrans, blockSizeTrans >> > (d_mPolyForwardProj, d_mCoordinate, texObj, mCTScanSystemInfo, mCTScanParas, i);
+
+		cudaError_t cudaStatus = cudaGetLastError();
+		if (cudaStatus != cudaSuccess) {
+			fprintf(stderr, "transformFocalSpotKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
+		}cudaStatus = cudaDeviceSynchronize();
+		if (cudaStatus != cudaSuccess) {
+			fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching transformFocalSpotKernel!\nError: %s!\n", cudaStatus, cudaGetErrorString(cudaStatus));
+		}
+
+		//// 调试代码
+		//float* tempIntX = new float[mCTScanSystemInfo.intNum * mCTScanParas.dNumU * mCTScanParas.dNumV];
+		//cudaMemcpy(tempIntX, d_mPolyForwardProj->phantom, mCTScanSystemInfo.intNum * mCTScanParas.dNumU * mCTScanParas.dNumV * sizeof(float), cudaMemcpyDeviceToHost);
+		//FILE* fp;
+		//fp = fopen("test.raw", "wb");
+		//fwrite(tempIntX, 1, mCTScanSystemInfo.intNum * mCTScanParas.dNumU * mCTScanParas.dNumV * sizeof(float), fp);
+		//fclose(fp);
+
+		computeSinMatIndensityProjKernel << <gridSizeProj, blockSizeProj >> > (d_mPolyForwardProj, mCTScanSystemInfo, mCTScanParas, i);
+
+		cudaStatus = cudaGetLastError();
+		if (cudaStatus != cudaSuccess) {
+			fprintf(stderr, "forwardProjKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
+		}cudaStatus = cudaDeviceSynchronize();
+		if (cudaStatus != cudaSuccess) {
+			fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching forwardProjKernel!\nError: %s!\n", cudaStatus, cudaGetErrorString(cudaStatus));
+		}
+
+		//// 调试代码
+		//cudaMemcpy(h_mPolyForwardProj->I, d_mPolyForwardProj->I, mCTScanParas.dNumU * mCTScanParas.dNumV * mCTScanParas.projNum * sizeof(float), cudaMemcpyDeviceToHost);
+		//// 检测
+		////FILE* fp;
+		//fp = fopen("test.raw", "wb");
+		//fwrite(h_mPolyForwardProj->I, 1, mCTScanParas.dNumU * mCTScanParas.dNumV * mCTScanParas.projNum * sizeof(float), fp);
+		//fclose(fp);
+	}
+
+	// 最终投影进行偏移，做到焦点偏移，相当于物体和探测器同时朝同一方向偏移
+	createTexture3D(texObj, d_mPolyForwardProj.proj, mCTScanParas.dNumU, mCTScanParas.dNumV, mCTScanParas.projNum);
+
+	dim3 blockSizePOffsetMatch(BLOCKSIZEX, BLOCKSIZEY, BLOCKSIZEZ);
+	dim3 gridSizePOffsetMatch((mCTScanParas.dNumU - 1) / blockSizePOffsetMatch.x + 1, (mCTScanParas.dNumV - 1) / blockSizePOffsetMatch.y + 1, (mCTScanParas.projNum - 1) / blockSizePOffsetMatch.z + 1);
+
+	projOffsetMatchKernel << <gridSizePOffsetMatch, blockSizePOffsetMatch >> > (d_mPolyForwardProj, texObj, mCTScanParas);
+
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "projOffsetMatchKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
+	}cudaStatus = cudaDeviceSynchronize();
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching projOffsetMatchKernel!\nError: %s!\n", cudaStatus, cudaGetErrorString(cudaStatus));
+	}
+
+
+	// 计时
+	cudaEventRecord(g_stop, 0);
+	cudaEventSynchronize(g_stop);
+	float elapsedTime = 0;
+	cudaEventElapsedTime(&elapsedTime, g_start, g_stop);
+	std::cout << "==>>密度图像投影耗时(GPU)：" << elapsedTime / 1000.0f << " s" << std::endl;
+	cudaEventDestroy(g_start);
+	cudaEventDestroy(g_stop);
+
+
+
+	// Allocate GPU buffers and host
+	cudaMalloc(&d_mPolyForwardProj.I, mCTScanParas.dNumU * mCTScanParas.dNumV * mCTScanParas.projNum * sizeof(float));
+	cudaMalloc(&d_mPolyForwardProj.IAbsorb, mCTScanParas.dNumU * mCTScanParas.dNumV * mCTScanParas.projNum * sizeof(float));
+
+	// 栅数据
+	//cudaMalloc(&d_mPolyForwardProj.grid, mCTScanParas.dNumU * sizeof(float));
+
+	// 探测器响应数据
+	cudaMalloc(&d_mPolyForwardProj.detResponse, mCTScanParas.dNumU * mCTScanParas.dNumV * sizeof(float));
 
 }
 

@@ -20,15 +20,22 @@
 int main()
 {
     ForwardProjection mForwardProjection;
+
     //mForwardProjection.forwardPolyProjGrid();
-    //mForwardProjection.forwardPolyProjNoGrid();
-    mForwardProjection.forwardSinMatPolyProjGrid();
+    //mForwardProjection.forwardSinMatPolyProjGrid();
     //mForwardProjection.forwardSinMatPolyProjGridFoSp();
     //mForwardProjection.forwardSinMatPolyProjGridNoResponse();
+    
+    //mForwardProjection.forwardPolyProjNoGrid();
     //mForwardProjection.forwardSinMatPolyProjNoGrid();
+    mForwardProjection.forwardSinMatPolyProjNoGridFoSp();
     //mForwardProjection.forwardSinMatPolyProjNoGridNoResponse();
     
+
     //mForwardProjection.forwarProjNoGridTestI0();
+
+
+    return 0;
 }
 
 
