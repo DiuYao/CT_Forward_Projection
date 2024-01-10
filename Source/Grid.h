@@ -44,17 +44,21 @@ struct GridAndDetectorSystem
     // um
     size_t dNums;                   // 单位: pix
     float dSize;                   // 单位: um
-    int leadStripsDistance;         // 单位: um
-    int leadStripsWidth;            // 单位: um
+    int interspcaceWidth;         // 单位: um
+    int gridStripsWidth;            // 单位: um
     float h;                        // 单位: mm
     float FD;                       // 焦距, 单位: mm
 
-    std::string materialGridStrip;            // 栅条材料
-    float rhoGS;                              // 栅条密度   g/cm^3 
-    std::string materialGridInterspacer;      // 间隔物材料
+    std::string gridStripMaterial;              // 栅条材料
+    float gridStripDensity;                     // 栅条密度   g/cm^3 
+    std::string gridStripMAPath;				    // 栅条质量衰减系数路径
 
-    float uGridStrip;                        // 栅条 Line attenuation coefficient  单位: 1/mm
-    float uInterspacer;                      // 间隔物 Line attenuation coefficient  单位: 1/mm
+    std::string interspaceMaterial;         // 间隔物材料
+    float interspaceDensity;
+    std::string interspaceMAPath;				// 间隔物衰减系数路径
+
+    float gridStripLinearAtten;                        // 栅条 Line attenuation coefficient  单位: 1/mm
+    float interspaceLinearAtten;                      // 间隔物 Line attenuation coefficient  单位: 1/mm
 
     size_t mI0Photons;              // I0的光子数
 
@@ -72,7 +76,8 @@ public:
     void creatGrid();
     void defGrid();
     // 更新栅信息，没有保存到本地的功能
-    void updataGrid(float uGridStrip);
+    void updataGrid(float gridStripLinearAtten, float interspaceLinearAtten);
+    
     void showGridH();
     void showPeriodIncex();
     void getPeriodIncex(vector<size_t>& gridPeriodIndex);
@@ -120,20 +125,22 @@ private:
     size_t angleNums;
     size_t dSize;   // um
 
-    int leadStripsDistance;     // um
-    int leadStripsWidth;        // um
+    int interspcaceWidth;     // um
+    int gridStripsWidth;        // um
     int gridPeriod;             // um
     float h;                    // 栅厚 um
     float FD;                   // 焦距 um
 
    
-    std::string materialGridStrip;         // 栅条的材料
-    float uGridStrip;                      // 线性衰减系数 1/um
-    float rhoGS;                              // 栅条密度   g/cm^3 
-    std::string materialGridInterspacer;   // 间隔物的材料
-    float uInterspacer;                    // 线性衰减系数 1/um
+    std::string gridStripMaterial;          // 栅条的材料
+    float gridStripLinearAtten;             // 线性衰减系数 1/um
+    float gridStripDensity;                 // 栅条密度   g/cm^3 
+    
+    std::string interspaceMaterial;         // 间隔物的材料
+    float interspaceLinearAtten;           // 线性衰减系数 1/um
+    float interspaceDensity;               // 栅条密度   g/cm^3 
 
-    size_t discreteUnitNums;    // 离散单元总数
+    size_t discreteUnitNums;            // 离散单元总数
     
     char* fileName;
 

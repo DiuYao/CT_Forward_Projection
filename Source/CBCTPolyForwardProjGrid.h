@@ -4,13 +4,14 @@
 
 #include "CBCTForwardProj.h"
 #include "Grid.h"
+
 #include ".\CUDAFun\CBCTPolyProjGPU.cuh"
 
 
 class CBCTPolyForwardProjGrid : public CBCTForwardProj
 {
 public:
-	CBCTPolyForwardProjGrid(CTScanParas inCTScanParas, GridInfo inGridInfo, FilePath inFileInfo);
+	CBCTPolyForwardProjGrid(CTScanParas inCTScanParas, GridInfo inGridInfo, FilePath inFileInfo, const PhantomMaterial inPhantomMaterial);
 	~CBCTPolyForwardProjGrid();
 
 	virtual void computePolyForwProj();
@@ -36,6 +37,7 @@ public:
 
 public:
 //private:
+	
 	Grid* mGrid;
 	GridAndDetectorSystem mGridAndDetectorSystem;
 	vector<size_t> gridPeriodIndex;

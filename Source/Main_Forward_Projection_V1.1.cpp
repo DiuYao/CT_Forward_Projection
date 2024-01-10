@@ -11,8 +11,6 @@
 * 
 */
 
-
-
 #include <iostream>
 
 #include "ForwardProjection.h"
@@ -21,6 +19,8 @@ int main()
 {
     ForwardProjection mForwardProjection;
 
+    mForwardProjection.run();
+
     //mForwardProjection.forwardPolyProjGrid();
     //mForwardProjection.forwardSinMatPolyProjGrid();
     //mForwardProjection.forwardSinMatPolyProjGridFoSp();
@@ -28,7 +28,7 @@ int main()
     
     //mForwardProjection.forwardPolyProjNoGrid();
     //mForwardProjection.forwardSinMatPolyProjNoGrid();
-    mForwardProjection.forwardSinMatPolyProjNoGridFoSp();
+    //mForwardProjection.forwardSinMatPolyProjNoGridFoSp();
     //mForwardProjection.forwardSinMatPolyProjNoGridNoResponse();
     
 

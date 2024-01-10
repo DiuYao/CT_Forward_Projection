@@ -16,6 +16,7 @@ delete var;\
 var = nullptr;\
 }
 
+typedef unsigned char uint8;
 typedef unsigned int uint32;
 
 // 闪烁体信息
@@ -41,7 +42,7 @@ struct CTScanParas
 	
 	float dSize;							 // 探测器分辨率   mm
 
-	float I0Val;							// 程序中的光子初始数量，注意，在有探元响应时和I0不等
+	size_t I0Val;							// 程序中的光子初始数量，注意，在有探元响应时和I0不等
 	
 	float focalSpotSize;					// 焦斑大小, 单位 mm
 
@@ -56,17 +57,21 @@ struct CTScanParas
 struct GridInfo
 {
 	// um
-	int leadStripsDistance;         // 栅条间隔	单位: um
-	int leadStripsWidth;            // 栅条宽度	单位: um
+	int interspcaceWidth;         // 栅条间隔	单位: um
+	int gridStripsWidth;            // 栅条宽度	单位: um
 	float h;                        // 厚度		单位: mm
 	float FD;                       // 焦距		单位: mm
 
-	std::string materialGridStrip;            // 栅条材料
-	float rhoGS;                              // 栅条密度   g/cm^3 
-	std::string materialGridInterspacer;      // 间隔物材料
+	std::string gridStripMaterial;            // 栅条材料
+	float gridStripDensity;                   // 栅条密度   g/cm^3 
+	std::string gridStripMAPath;				// 栅条质量衰减系数路径
 
-	float uGridStrip;                        // 栅条 Line attenuation coefficient  单位: 1/mm
-	float uInterspacer;                      // 间隔物 Line attenuation coefficient  单位: 1/mm
+	std::string interspaceMaterial;			// 间隔物材料
+	float interspaceDensity;
+	std::string interspaceMAPath;				// 间隔物衰减系数路径
+
+	float gridStripLinearAtten;                        // 栅条 Line attenuation coefficient  单位: 1/mm
+	float interspaceLinearAtten;                      // 间隔物 Line attenuation coefficient  单位: 1/mm
 };
 
 // 系统参数
@@ -122,11 +127,13 @@ struct Coordinate
 // 
 struct PolyForwardProj
 {
+	uint8* phantomStructure;
 	float* phantom;							// 单材质时是密度(g/cm^3)，多材质时是线性衰减系数
 	float* phantomMassAtten;				// 模体的质量衰减系数，单材质时使用此参数 单位 cm^2/g
 	float* spectrumNormal;					// 归一化能谱
 	float* grid;							// 栅数据
-	float* gridLineAtten;					// 栅条线性衰减系数
+	float* gridLinearAtten;					// 栅条线性衰减系数
+	float* interspaceLinearAtten;			// 间隔填充物线性衰减系数
 	float* I, * I0, * IAbsorb;				// 过程中的穿透I，物体吸收IAbsorb，亮场I0
 	float* proj;							// Proj
 
@@ -145,17 +152,32 @@ struct FilePath
 	std::string gridPath;
 	std::string phantomPath;				// 模体线性衰减系数图像路径,非完整路径, 具体以程序要求为主; 单材质时是密度图像路径,输入完整路径
 	std::string phantomMAttenPath;			// 单材质时的模体质量衰减系数图像路径, 完整路径
-	std::string IEPath;
+	std::string outputFolder;
 	std::string scintillatorPath;
 	std::string convKernelGridPath;
 };
 
 
+struct PhantomMaterial
+{
+	int materialNum;
+	std::string structureMarkPath;
+
+	float* density;
+	std::string* massAttenPath;
+};
 
 
 
-
-
+enum ScanMode
+{
+	TestI0,
+	GridNoResponse,
+	GridResponse,
+	NoGridNoResponse,
+	NoGridResponse
+	
+};
 
 
 

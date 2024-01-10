@@ -1,6 +1,11 @@
 #pragma once
 
+#include <direct.h>
+#include <corecrt_io.h>
+#include <filesystem>
+
 #include "DataType.h"
+#include "PhantomObject.h"
 
 class CBCTForwardProj
 {
@@ -32,6 +37,7 @@ public:
 
 	// 读取数据
 	virtual void readSpecrtumNorm();
+	// 读取滤线栅的质量衰减系数(cm^2/g)，转换为线性衰减系数(1/mm)
 	virtual void readGridMassAttu();
 
 	// 读取闪烁体质量衰减系数，并转化为线性衰减系数
@@ -57,10 +63,17 @@ public:
 	virtual void computeProj();
 	virtual void saveProj() = 0;
 
+	// 输出文件夹检测与创建
+	virtual void creatOutputFolder();
+	// 保存数据前检测是否是空文件夹，非空，删除其中数据
+	virtual void _removeOutputFolder();
+
 	// 卷积
 	virtual void scatterSimulGrid() = 0;
 
 public:
+	PhantomObject* mPhantomObject;
+
 	CTScanSystemInfo mCTScanSystemInfo;
 	CTScanParas mCTScanParas;
 	Coordinate d_mCoordinate;
@@ -68,6 +81,8 @@ public:
 	PolyForwardProj h_mForwardProj;
 	PolyForwardProj d_mForwardProj;
 	FilePath mFilePath;
+
+	PhantomMaterial _mPhantomMaterial;
 
 	GridInfo mGridInfo;   // 栅信息
 

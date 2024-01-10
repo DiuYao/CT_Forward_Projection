@@ -3,7 +3,7 @@
 class CBCTSinMatPolyForwardProjNoGrid : private CBCTPolyForwardProjNoGrid
 {
 public:
-	CBCTSinMatPolyForwardProjNoGrid(CTScanParas inCTScanParas, GridInfo inGridInfo, FilePath inFileInfo) : CBCTPolyForwardProjNoGrid(inCTScanParas, inFileInfo) {};
+	CBCTSinMatPolyForwardProjNoGrid(CTScanParas inCTScanParas, FilePath inFileInfo, const PhantomMaterial inPhantomMaterial) : CBCTPolyForwardProjNoGrid(inCTScanParas, inFileInfo, inPhantomMaterial) {};
 	~CBCTSinMatPolyForwardProjNoGrid();
 
 	virtual void computePolyForwProj();

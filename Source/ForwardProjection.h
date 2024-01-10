@@ -5,10 +5,18 @@
 #include "CBCTPolyForwardProjNoGrid.h"
 #include "CBCTSinMatPolyForwardProjGrid.h"
 #include "CBCTSinMatPolyForwardProjNoGrid.h"
+#include "InitFile.h"
+
 
 class ForwardProjection
 {
 public:
+
+	~ForwardProjection();
+
+	void run();
+
+private:
 	void forwardPolyProjGrid();
 	void forwardSinMatPolyProjGrid();
 	void forwardSinMatPolyProjGridFoSp();
@@ -22,6 +30,13 @@ public:
 	void forwarProjNoGridTestI0();
 
 private:
+	void _getCTScanConfig();
+
+	void _getCTScanGridConfig();
+	void _getCTScanDetResponseConfig();
+
+	void _getOutputFolderConfig();
+
 	void inCTScanInfo();
 
 	void inCTScanInfoGrid();
@@ -38,6 +53,14 @@ private:
 	GridInfo mGridInfo;   // ’§–≈œ¢
 	FilePath mFilePath;
 
+	CInitFile mCInitFile;
 
+	int _isTestI0;
+	//int _isPolyenergetic;
+	int _isDetResponse;
+	int _isGrid;
+	int _isSingleMaterial;
+
+	PhantomMaterial _mPhantomMaterial;
 };
 

@@ -39,6 +39,9 @@
     <ClCompile Include="Source\CBCTSinMatPolyForwardProjNoGrid.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Source\PhantomObject.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\DataType.h">
@@ -64,6 +67,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Source\CBCTSinMatPolyForwardProjNoGrid.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\PhantomObject.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

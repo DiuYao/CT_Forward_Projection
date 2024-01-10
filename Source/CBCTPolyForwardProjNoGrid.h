@@ -9,7 +9,7 @@
 class CBCTPolyForwardProjNoGrid : public CBCTForwardProj
 {
 public:
-	CBCTPolyForwardProjNoGrid(CTScanParas inCTScanParas, FilePath inFileInfo);
+	CBCTPolyForwardProjNoGrid(CTScanParas inCTScanParas, FilePath inFileInfo, const PhantomMaterial inPhantomMaterial);
 	~CBCTPolyForwardProjNoGrid();
 
 	virtual void computePolyForwProj();

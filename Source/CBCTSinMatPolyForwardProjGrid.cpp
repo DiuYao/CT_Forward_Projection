@@ -6,10 +6,6 @@
 using namespace std;
 
 
-
-
-
-
 CBCTSinMatPolyForwardProjGrid::~CBCTSinMatPolyForwardProjGrid()
 {
 }
@@ -42,11 +38,26 @@ void CBCTSinMatPolyForwardProjGrid::computePolyForwProj()
 	readSpecrtumNorm();
 
 	// 读取单材质模体质量衰减系数
-	h_mForwardProj.phantomMassAtten = new float[mCTScanParas.specEnergyNum];
-	readPhantomMassAtten();
-	// 读取单材质模体密度
+	//h_mForwardProj.phantomMassAtten = new float[mCTScanParas.specEnergyNum];
+	//readPhantomMassAtten();
+	// 获得单材质模体密度
 	h_mForwardProj.phantom = new float[mCTScanParas.pNumX * mCTScanParas.pNumY * mCTScanParas.pNumZ];
-	readPhantom();
+	//readPhantom();
+	mPhantomObject = new PhantomObject(mCTScanParas, _mPhantomMaterial);
+	mPhantomObject->readData();
+	mPhantomObject->computeDesity(h_mForwardProj.phantom);
+
+	//// 调试。保存h_mForwardProj.phantom)
+	//string tempPath = mFilePath.outputFolder + "/Density_" + to_string(mCTScanParas.dNumU) + "x" + to_string(mCTScanParas.dNumV) + "x" + to_string(mCTScanParas.projNum) + "_float.raw";
+
+	//deleteFile(tempPath);
+
+	//ofstream ofs;
+	//ofs.open(tempPath, ios::out | ios::binary);
+	//ofs.write((const char*)h_mForwardProj.phantom, mCTScanParas.pNumX * mCTScanParas.pNumY * mCTScanParas.pNumZ * sizeof(float));
+	//ofs.close();
+
+
 
 	// 计算闪烁体厚度
 	h_mForwardProj.scintillatorPerThickness = new float[mCTScanParas.dNumU * mCTScanParas.dNumV];
@@ -57,7 +68,8 @@ void CBCTSinMatPolyForwardProjGrid::computePolyForwProj()
 	readScintillatorMassAttu();
 
 	// 读取栅信息
-	h_mForwardProj.gridLineAtten = new float[mCTScanParas.specEnergyNum];
+	h_mForwardProj.gridLinearAtten = new float[mCTScanParas.specEnergyNum];
+	h_mForwardProj.interspaceLinearAtten = new float[mCTScanParas.specEnergyNum];
 	readGridMassAttu();
 	// 初始化栅信息
 	initGridInfo();
@@ -74,8 +86,9 @@ void CBCTSinMatPolyForwardProjGrid::computePolyForwProj()
 	{
 		// 获得当前能量对应的概率，即谱中不同能量的对应值
 		mCTScanSystemInfo.spectrumVal = h_mForwardProj.spectrumNormal[i];
-		// 或者单材质模体的质量衰减系数
-		mCTScanSystemInfo.phantomMAtten = h_mForwardProj.phantomMassAtten[i] / 10.0f;
+		// 获得单材质模体的质量衰减系数
+		//mCTScanSystemInfo.phantomMAtten = h_mForwardProj.phantomMassAtten[i] / 10.0f;
+		mPhantomObject->updataMassAtten(mCTScanSystemInfo.phantomMAtten, specIndex);
 
 		// 更新探测器响应
 		updateDetResponse();
@@ -84,7 +97,7 @@ void CBCTSinMatPolyForwardProjGrid::computePolyForwProj()
 		getADetResponse();
 
 		// 更新栅
-		mGrid->updataGrid(h_mForwardProj.gridLineAtten[i]);
+		mGrid->updataGrid(h_mForwardProj.gridLinearAtten[i], h_mForwardProj.interspaceLinearAtten[i]);
 
 		// 显示进程
 		showProcessInfo();
@@ -104,6 +117,8 @@ void CBCTSinMatPolyForwardProjGrid::computePolyForwProj()
 
 	// 数据类型转换和数据保存
 	convertIandIAbsorbDt();
+
+	creatOutputFolder();
 	saveIandIAbsorb();
 	saveI0();
 
@@ -157,11 +172,14 @@ void CBCTSinMatPolyForwardProjGrid::computePolyForwProjNoResponse()
 	readSpecrtumNorm();
 
 	// 读取单材质模体质量衰减系数
-	h_mForwardProj.phantomMassAtten = new float[mCTScanParas.specEnergyNum];
-	readPhantomMassAtten();
-	// 读取单材质模体密度
+	//h_mForwardProj.phantomMassAtten = new float[mCTScanParas.specEnergyNum];
+	//readPhantomMassAtten();
+	// 获得单材质模体密度
 	h_mForwardProj.phantom = new float[mCTScanParas.pNumX * mCTScanParas.pNumY * mCTScanParas.pNumZ];
-	readPhantom();
+	//readPhantom();
+	mPhantomObject = new PhantomObject(mCTScanParas, _mPhantomMaterial);
+	mPhantomObject->readData();
+	mPhantomObject->computeDesity(h_mForwardProj.phantom);
 
 	// 计算闪烁体厚度
 	//h_mForwardProj.scintillatorPerThickness = new float[mCTScanParas.dNumU * mCTScanParas.dNumV];
@@ -172,8 +190,10 @@ void CBCTSinMatPolyForwardProjGrid::computePolyForwProjNoResponse()
 	//readScintillatorMassAttu();
 
 	// 读取栅信息
-	h_mForwardProj.gridLineAtten = new float[mCTScanParas.specEnergyNum];
+	h_mForwardProj.gridLinearAtten = new float[mCTScanParas.specEnergyNum];
+	h_mForwardProj.interspaceLinearAtten = new float[mCTScanParas.specEnergyNum];
 	readGridMassAttu();
+
 	// 初始化栅信息
 	initGridInfo();
 	h_mForwardProj.grid = new float[mCTScanParas.dNumU];
@@ -188,8 +208,9 @@ void CBCTSinMatPolyForwardProjGrid::computePolyForwProjNoResponse()
 	{
 		// 获得当前能量对应的概率，即谱中不同能量的对应值
 		mCTScanSystemInfo.spectrumVal = h_mForwardProj.spectrumNormal[i];
-		// 或者单材质模体的质量衰减系数
-		mCTScanSystemInfo.phantomMAtten = h_mForwardProj.phantomMassAtten[i] / 10.0f;
+		// 获得单材质模体的质量衰减系数
+		//mCTScanSystemInfo.phantomMAtten = h_mForwardProj.phantomMassAtten[i] / 10.0f;
+		mPhantomObject->updataMassAtten(mCTScanSystemInfo.phantomMAtten, specIndex);
 
 		// 更新探测器响应
 		//updateDetResponse();
@@ -198,7 +219,7 @@ void CBCTSinMatPolyForwardProjGrid::computePolyForwProjNoResponse()
 		//getADetResponse();
 
 		// 更新栅
-		mGrid->updataGrid(h_mForwardProj.gridLineAtten[i]);
+		mGrid->updataGrid(h_mForwardProj.gridLinearAtten[i], h_mForwardProj.interspaceLinearAtten[i]);
 
 		// 显示进程
 		showProcessInfoNoResponse();
@@ -218,6 +239,8 @@ void CBCTSinMatPolyForwardProjGrid::computePolyForwProjNoResponse()
 
 	// 数据类型转换和数据保存
 	convertIandIAbsorbDt();
+
+	creatOutputFolder();
 	saveIandIAbsorb();
 	saveI0();
 
@@ -275,9 +298,9 @@ void CBCTSinMatPolyForwardProjGrid::computePolyForwProjFoSp()
 	h_mForwardProj.spectrumNormal = new float[mCTScanParas.specEnergyNum];
 	readSpecrtumNorm();
 
-	// 读取单材质模体质量衰减系数
+	// // 读取单材质模体质量衰减系数
 	h_mForwardProj.phantomMassAtten = new float[mCTScanParas.specEnergyNum];
-	readPhantomMassAtten();
+	//readPhantomMassAtten();
 	// 读取单材质模体密度
 	h_mForwardProj.phantom = new float[mCTScanParas.pNumX * mCTScanParas.pNumY * mCTScanParas.pNumZ];
 	readPhantom();
@@ -291,7 +314,7 @@ void CBCTSinMatPolyForwardProjGrid::computePolyForwProjFoSp()
 	readScintillatorMassAttu();
 
 	// 读取栅信息
-	h_mForwardProj.gridLineAtten = new float[mCTScanParas.specEnergyNum];
+	h_mForwardProj.gridLinearAtten = new float[mCTScanParas.specEnergyNum];
 	readGridMassAttu();
 	// 初始化栅信息
 	initGridInfo();
@@ -309,7 +332,8 @@ void CBCTSinMatPolyForwardProjGrid::computePolyForwProjFoSp()
 		// 获得当前能量对应的概率，即谱中不同能量的对应值
 		mCTScanSystemInfo.spectrumVal = h_mForwardProj.spectrumNormal[i];
 		// 或者单材质模体的质量衰减系数
-		mCTScanSystemInfo.phantomMAtten = h_mForwardProj.phantomMassAtten[i] / 10.0f;
+		//mCTScanSystemInfo.phantomMAtten = h_mForwardProj.phantomMassAtten[i] / 10.0f;
+		mPhantomObject->updataMassAtten(mCTScanSystemInfo.phantomMAtten, specIndex);
 
 		// 更新探测器响应
 		updateDetResponse();
@@ -318,7 +342,7 @@ void CBCTSinMatPolyForwardProjGrid::computePolyForwProjFoSp()
 		getADetResponse();
 
 		// 更新栅
-		mGrid->updataGrid(h_mForwardProj.gridLineAtten[i]);
+		mGrid->updataGrid(h_mForwardProj.gridLinearAtten[i], h_mForwardProj.interspaceLinearAtten[i]);
 
 		// 显示进程
 		showProcessInfo();
@@ -388,14 +412,14 @@ void CBCTSinMatPolyForwardProjGrid::readPhantomMassAtten()
 	ifs.open(mFilePath.phantomMAttenPath, ios::in | ios::binary);
 	if (!ifs.is_open())
 	{
-		cout << "单材质模体密度数据打开失败!" << endl;
+		cout << "单材质模体质量衰减系数数据打开失败!" << endl;
 		system("pause");
 		exit(0);
 	}
 
 	int ii = 0;
 	float buf;
-	while (ifs >> buf)
+	while (ifs >> buf && ii < mCTScanParas.specEnergyNum)  // 增加后面的条件是为了读取所需要的数据，与开辟空间大小相同，防止内存泄露
 	{
 		// 读取的是质量衰减系数
 		h_mForwardProj.phantomMassAtten[ii] = buf;

@@ -6,7 +6,7 @@
 
 using namespace std;
 
-CBCTPolyForwardProjGrid::CBCTPolyForwardProjGrid(CTScanParas inCTScanParas, GridInfo inGridInfo, FilePath inFileInfo)
+CBCTPolyForwardProjGrid::CBCTPolyForwardProjGrid(CTScanParas inCTScanParas, GridInfo inGridInfo, FilePath inFileInfo, const PhantomMaterial inPhantomMaterial)
 {
 	specIndex = 0;
 	mCTScanParas = { 0 };
@@ -14,6 +14,7 @@ CBCTPolyForwardProjGrid::CBCTPolyForwardProjGrid(CTScanParas inCTScanParas, Grid
 	mFilePath = {  };
 	mGridInfo = { 0 };
 	mGridAndDetectorSystem = { 0 };
+	_mPhantomMaterial = { 0 };
 
 	h_mForwardProj = { nullptr };
 	d_mForwardProj = { nullptr };
@@ -36,7 +37,7 @@ CBCTPolyForwardProjGrid::CBCTPolyForwardProjGrid(CTScanParas inCTScanParas, Grid
 	mCTScanParas.projNum = inCTScanParas.projNum;
 	mCTScanParas.rotatedDirection = inCTScanParas.rotatedDirection;
 
-	mCTScanParas.spectrumStep = inCTScanParas.spectrumStep;
+	mCTScanParas.spectrumStep = 1;// inCTScanParas.spectrumStep;
 	mCTScanParas.specEnergyNum = inCTScanParas.specEnergyNum;
 
 	mCTScanParas.I0Val = inCTScanParas.I0Val;
@@ -51,23 +52,30 @@ CBCTPolyForwardProjGrid::CBCTPolyForwardProjGrid(CTScanParas inCTScanParas, Grid
 	// 栅信息初始化
 	mGridInfo.FD = inGridInfo.FD;
 	mGridInfo.h = inGridInfo.h;
-	mGridInfo.leadStripsDistance = inGridInfo.leadStripsDistance;
-	mGridInfo.leadStripsWidth = inGridInfo.leadStripsWidth;
-	mGridInfo.materialGridInterspacer = inGridInfo.materialGridInterspacer;
-	mGridInfo.materialGridStrip = inGridInfo.materialGridStrip;
-	mGridInfo.rhoGS = inGridInfo.rhoGS;
-	mGridInfo.uGridStrip = inGridInfo.uGridStrip;
-	mGridInfo.uInterspacer = inGridInfo.uInterspacer;
+	mGridInfo.interspcaceWidth = inGridInfo.interspcaceWidth;
+	mGridInfo.gridStripsWidth = inGridInfo.gridStripsWidth;
+	mGridInfo.interspaceMaterial = inGridInfo.interspaceMaterial;
+	mGridInfo.gridStripMaterial = inGridInfo.gridStripMaterial;
+	mGridInfo.gridStripDensity = inGridInfo.gridStripDensity;
+	mGridInfo.gridStripLinearAtten = inGridInfo.gridStripLinearAtten;
+	mGridInfo.interspaceLinearAtten = inGridInfo.interspaceLinearAtten;
+	mGridInfo.gridStripMAPath = inGridInfo.gridStripMAPath;
+	mGridInfo.interspaceMAPath = inGridInfo.interspaceMAPath;
 
 	// 路径初始化
 	mFilePath.spectrumPath = inFileInfo.spectrumPath;
 	mFilePath.phantomPath = inFileInfo.phantomPath;
 	mFilePath.phantomMAttenPath = inFileInfo.phantomMAttenPath;
 	mFilePath.gridPath = inFileInfo.gridPath;
-	mFilePath.IEPath = inFileInfo.IEPath;
+	mFilePath.outputFolder = inFileInfo.outputFolder;
 	mFilePath.scintillatorPath = inFileInfo.scintillatorPath;
 	mFilePath.convKernelGridPath = inFileInfo.convKernelGridPath;
 
+	// 模体材质信息初始化
+	_mPhantomMaterial.materialNum = inPhantomMaterial.materialNum;
+	_mPhantomMaterial.structureMarkPath = inPhantomMaterial.structureMarkPath;
+	_mPhantomMaterial.density = inPhantomMaterial.density;
+	_mPhantomMaterial.massAttenPath = inPhantomMaterial.massAttenPath;
 }
 
 CBCTPolyForwardProjGrid::~CBCTPolyForwardProjGrid()
@@ -80,7 +88,8 @@ CBCTPolyForwardProjGrid::~CBCTPolyForwardProjGrid()
 	DELETEARR(h_mForwardProj.spectrumNormal);
 	DELETEARR(h_mForwardProj.IAbsorb);
 	DELETEARR(h_mForwardProj.detResponse);
-	DELETEARR(h_mForwardProj.gridLineAtten);
+	DELETEARR(h_mForwardProj.gridLinearAtten);
+	DELETEARR(h_mForwardProj.interspaceLinearAtten);
 	DELETEARR(h_mForwardProj.scintillatorLineAtten);
 	DELETEARR(h_mForwardProj.scintillatorPerThickness);
 	DELETEARR(h_mForwardProj.proj);
@@ -114,9 +123,16 @@ void CBCTPolyForwardProjGrid::computePolyForwProj()
 
 	computeParas();
 
+	// 显示成像信息
+	showScanSystemInfo();
+
 	// 读取能谱信息
 	h_mForwardProj.spectrumNormal = new float[mCTScanParas.specEnergyNum];
 	readSpecrtumNorm();
+
+	// 模体构造
+	mPhantomObject = new PhantomObject(mCTScanParas, _mPhantomMaterial);
+	mPhantomObject->readData();
 
 	// 计算闪烁体厚度
 	h_mForwardProj.scintillatorPerThickness = new float[mCTScanParas.dNumU * mCTScanParas.dNumV];
@@ -127,7 +143,8 @@ void CBCTPolyForwardProjGrid::computePolyForwProj()
 	readScintillatorMassAttu();
 
 	// 读取栅信息
-	h_mForwardProj.gridLineAtten = new float[mCTScanParas.specEnergyNum];
+	h_mForwardProj.gridLinearAtten = new float[mCTScanParas.specEnergyNum];
+	h_mForwardProj.interspaceLinearAtten = new float[mCTScanParas.specEnergyNum];
 	readGridMassAttu();
 
 	initGridInfo();
@@ -142,11 +159,12 @@ void CBCTPolyForwardProjGrid::computePolyForwProj()
 	for (size_t i = 0; i < mCTScanParas.specEnergyNum; i++)
 	{
 		mCTScanSystemInfo.spectrumVal = h_mForwardProj.spectrumNormal[i];
-		readPhantom();
+		//readPhantom();
+		mPhantomObject->updataLineAtten(h_mForwardProj.phantom, specIndex);
 
 		updateDetResponse();
 
-		mGrid->updataGrid(h_mForwardProj.gridLineAtten[i]);
+		mGrid->updataGrid(h_mForwardProj.gridLinearAtten[i], h_mForwardProj.interspaceLinearAtten[i]);
 
 		showProcessInfo();
 
@@ -163,6 +181,8 @@ void CBCTPolyForwardProjGrid::computePolyForwProj()
 	IPolyenergeticAbsorb = new uint32[mCTScanParas.dNumU * mCTScanParas.dNumV * mCTScanParas.projNum];
 
 	convertIandIAbsorbDt();
+
+	creatOutputFolder();
 	saveIandIAbsorb();
 	saveI0();
 	
@@ -207,7 +227,8 @@ void CBCTPolyForwardProjGrid::testI0()
 	readScintillatorMassAttu();
 
 	// 读取栅信息
-	h_mForwardProj.gridLineAtten = new float[mCTScanParas.specEnergyNum];
+	h_mForwardProj.gridLinearAtten = new float[mCTScanParas.specEnergyNum];
+	h_mForwardProj.interspaceLinearAtten = new float[mCTScanParas.specEnergyNum];
 	readGridMassAttu();
 
 	initGridInfo();
@@ -226,7 +247,7 @@ void CBCTPolyForwardProjGrid::testI0()
 
 		updateDetResponse();
 
-		mGrid->updataGrid(h_mForwardProj.gridLineAtten[i]);
+		mGrid->updataGrid(h_mForwardProj.gridLinearAtten[i], h_mForwardProj.interspaceLinearAtten[i]);
 
 		//showProcessInfo();
 
@@ -268,36 +289,39 @@ void CBCTPolyForwardProjGrid::initGridInfo()
 	mGridAndDetectorSystem.angleNums = mCTScanParas.projNum;
 	mGridAndDetectorSystem.dNums = mCTScanParas.dNumU;
 	mGridAndDetectorSystem.dSize = mCTScanParas.dSize * 1000; // 单位换算 mm -> um
+	
 	mGridAndDetectorSystem.FD = mGridInfo.FD;
 	mGridAndDetectorSystem.h = mGridInfo.h;
-	mGridAndDetectorSystem.leadStripsDistance = mGridInfo.leadStripsDistance;
-	mGridAndDetectorSystem.leadStripsWidth = mGridInfo.leadStripsWidth;
-	mGridAndDetectorSystem.materialGridInterspacer = mGridInfo.materialGridInterspacer;
-	mGridAndDetectorSystem.materialGridStrip = mGridInfo.materialGridStrip;
+	mGridAndDetectorSystem.gridStripsWidth = mGridInfo.gridStripsWidth;
+	mGridAndDetectorSystem.interspcaceWidth = mGridInfo.interspcaceWidth;
+	mGridAndDetectorSystem.gridStripMaterial = mGridInfo.gridStripMaterial;
+	mGridAndDetectorSystem.interspaceMaterial = mGridInfo.interspaceMaterial;
+	mGridAndDetectorSystem.gridStripDensity = mGridInfo.gridStripDensity;
+	mGridAndDetectorSystem.interspaceDensity = mGridInfo.interspaceDensity;
+	mGridAndDetectorSystem.gridStripMaterial = mGridInfo.gridStripMAPath;
+	mGridAndDetectorSystem.interspaceMAPath = mGridInfo.interspaceMAPath;
+
 	mGridAndDetectorSystem.mI0Photons = mCTScanParas.I0Val;
-	mGridAndDetectorSystem.rhoGS = mGridInfo.rhoGS;
-	mGridAndDetectorSystem.uGridStrip = mGridInfo.uGridStrip;
-	mGridAndDetectorSystem.uInterspacer = mGridInfo.uInterspacer;
+	mGridAndDetectorSystem.gridStripLinearAtten = mGridInfo.gridStripLinearAtten;
+	mGridAndDetectorSystem.interspaceLinearAtten = mGridInfo.interspaceLinearAtten;
 
 }
 
 void CBCTPolyForwardProjGrid::saveIandIAbsorb()
 {
-	// 保存探测器接收的光强
-	string tempPath = mFilePath.IEPath + "/PhoImgPro_Grid_Poly_" + to_string(mCTScanParas.dNumU) + "x" + to_string(mCTScanParas.dNumV) + "x" + to_string(mCTScanParas.projNum) + "_uint32.raw";
+	// 保存探测器接收的光强数据
+	string tempPath = mFilePath.outputFolder + "/PhoImgPro_Grid_" + to_string(mCTScanParas.dNumU) + "x" + to_string(mCTScanParas.dNumV) + "x" + to_string(mCTScanParas.projNum) + "_uint32.raw";
 
 	ofstream ofs;
 	ofs.open(tempPath, ios::out | ios::binary);
-
 	ofs.write((const char*)IPolyenergetic, mCTScanParas.dNumU * mCTScanParas.dNumV * mCTScanParas.projNum * sizeof(uint32));
 	ofs.close();
 
 
 	// 保存物体吸收的光强
-	tempPath = mFilePath.IEPath + "/PhoImgAbsorb_Grid_Poly_" + to_string(mCTScanParas.dNumU) + "x" + to_string(mCTScanParas.dNumV) + "x" + to_string(mCTScanParas.projNum) + "_uint32.raw";
+	tempPath = mFilePath.outputFolder + "/PhoImgAbsorb_Grid_" + to_string(mCTScanParas.dNumU) + "x" + to_string(mCTScanParas.dNumV) + "x" + to_string(mCTScanParas.projNum) + "_uint32.raw";
 
 	ofs.open(tempPath, ios::out | ios::binary);
-
 	ofs.write((const char*)IPolyenergeticAbsorb, mCTScanParas.dNumU * mCTScanParas.dNumV * mCTScanParas.projNum * sizeof(uint32));
 	ofs.close();
 }
@@ -328,11 +352,12 @@ void CBCTPolyForwardProjGrid::addI0NoResponse()
 void CBCTPolyForwardProjGrid::saveI0()
 {
 	// 保存I0
-	string tempPath = mFilePath.IEPath + "/BgImgPro_Grid_Poly_" + to_string(mCTScanParas.dNumU) + "x" + to_string(mCTScanParas.dNumV) + "_float.raw";
+	string tempPath = mFilePath.outputFolder + "/BgImgPro_Grid_" + to_string(mCTScanParas.dNumU) + "x" + to_string(mCTScanParas.dNumV) + "_float.raw";
+
+	//deleteFile(tempPath);
 
 	ofstream ofs;
 	ofs.open(tempPath, ios::out | ios::binary);
-
 	ofs.write((const char*)h_mForwardProj.I0, mCTScanParas.dNumU * mCTScanParas.dNumV * sizeof(float));
 	ofs.close();
 }
@@ -361,9 +386,9 @@ void CBCTPolyForwardProjGrid::showProcessInfo()
 	cout << endl;
 	cout << (specIndex + 1) * mCTScanParas.spectrumStep << "keV正过程计算中 =====>>>>>" << endl;
 	cout << "归一化能谱信息: " << h_mForwardProj.spectrumNormal[specIndex] << endl;
-	cout << "模体质量衰减系数: " << h_mForwardProj.phantomMassAtten[specIndex] << " cm^2/g" << endl;
+	//cout << "模体质量衰减系数: " << h_mForwardProj.phantomMassAtten[specIndex] << " cm^2/g" << endl;
 	cout << "闪烁体线性衰减系数: " << h_mForwardProj.scintillatorLineAtten[specIndex] << " 1/mm" << "\t";
-	cout << "滤线栅线性衰减系数: " << h_mForwardProj.gridLineAtten[specIndex] << " 1/mm" << endl;
+	cout << "滤线栅线性衰减系数: " << h_mForwardProj.gridLinearAtten[specIndex] << " 1/mm" << endl;
 }
 
 void CBCTPolyForwardProjGrid::showProcessInfoNoResponse()
@@ -371,9 +396,9 @@ void CBCTPolyForwardProjGrid::showProcessInfoNoResponse()
 	cout << endl;
 	cout << (specIndex + 1) * mCTScanParas.spectrumStep << "keV正过程计算中 =====>>>>>" << endl;
 	cout << "归一化能谱信息: " << h_mForwardProj.spectrumNormal[specIndex] << endl;
-	cout << "模体质量衰减系数: " << h_mForwardProj.phantomMassAtten[specIndex] << " cm^2/g" << endl;
+	//cout << "模体质量衰减系数: " << h_mForwardProj.phantomMassAtten[specIndex] << " cm^2/g" << endl;
 	//cout << "闪烁体线性衰减系数: " << h_mForwardProj.scintillatorLineAtten[specIndex] << " 1/mm" << "\t";
-	cout << "滤线栅线性衰减系数: " << h_mForwardProj.gridLineAtten[specIndex] << " 1/mm" << endl;
+	cout << "滤线栅线性衰减系数: " << h_mForwardProj.gridLinearAtten[specIndex] << " 1/mm" << endl;
 }
 
 
@@ -384,11 +409,10 @@ void CBCTPolyForwardProjGrid::scatterSimulGrid()
 void CBCTPolyForwardProjGrid::saveProj()
 {
 	// 保存Proj
-	string tempPath = mFilePath.IEPath + "/Projection_Grid_Poly_" + to_string(mCTScanParas.dNumU) + "x" + to_string(mCTScanParas.dNumV) + "x" + to_string(mCTScanParas.projNum) + "_float.raw";
+	string tempPath = mFilePath.outputFolder + "/Projection_Grid_" + to_string(mCTScanParas.dNumU) + "x" + to_string(mCTScanParas.dNumV) + "x" + to_string(mCTScanParas.projNum) + "_float.raw";
 
 	ofstream ofs;
 	ofs.open(tempPath, ios::out | ios::binary);
-
 	ofs.write((const char*)h_mForwardProj.proj, mCTScanParas.dNumU * mCTScanParas.dNumV * mCTScanParas.projNum * sizeof(float));
 	ofs.close();
 }

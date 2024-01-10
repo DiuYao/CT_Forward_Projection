@@ -2,11 +2,10 @@
 #include <iostream>
 #include <fstream>
 #include <cmath>
-#include <direct.h>
-#include <corecrt_io.h>
 #include <ctime>
 
 #include "CBCTForwardProj.h"
+
 
 #define PI acosf(-1)
 
@@ -38,7 +37,7 @@ void CBCTForwardProj::computeParas()
 	// mCTScanSystemInfo.FOVH = mCTScanParas.sod * mCTScanSystemInfo.dHalfLV / sqrt(mCTScanSystemInfo.dHalfLV * mCTScanSystemInfo.dHalfLV + mCTScanParas.sdd * mCTScanParas.sdd);                  // 垂直视野圆半径
 
 	// Pixel size
-	
+
 	/*mCTScanSystemInfo.pSizeX = 2 * mCTScanSystemInfo.FOVR / mCTScanParas.pNumX;
 	mCTScanSystemInfo.pSizeY = 2 * mCTScanSystemInfo.FOVR / mCTScanParas.pNumY;
 	mCTScanSystemInfo.pSizeZ = 2 * mCTScanSystemInfo.FOVH / mCTScanParas.pNumZ;*/
@@ -122,7 +121,10 @@ void CBCTForwardProj::updateDetResponse()
 
 void CBCTForwardProj::computeFoSpOffset()
 {
-	srand(time(0));
+	//srand(time(nullptr));
+
+	srand(10);  // 便于实验结果对比，固定种子，实际中应该不固定
+
 	float foSpRadius = mCTScanParas.focalSpotSize / 2.0f;
 	int tempFoSpSize = mCTScanParas.focalSpotSize * 10000;
 
@@ -159,7 +161,7 @@ void CBCTForwardProj::readSpecrtumNorm()
 
 	int ii = 0;
 	float buf;
-	while (ifs >> buf)
+	while (ifs >> buf && ii < mCTScanParas.specEnergyNum)
 	{
 		h_mForwardProj.spectrumNormal[ii] = buf;
 		ii++;
@@ -172,27 +174,54 @@ void CBCTForwardProj::readSpecrtumNorm()
 void CBCTForwardProj::readGridMassAttu()
 {
 	ifstream ifs;
-	ifs.open(mFilePath.gridPath, ios::in);
+
+	// 读取栅条质量衰减系数
+	ifs.open(mGridInfo.gridStripMAPath, ios::in);
 
 	if (!ifs.is_open())
 	{
-		cout << "栅衰减系数文件打开失败" << endl;
+		cout << "栅条质量衰减系数文件打开失败！" << endl;
 		system("pause");
 		exit(0);
 	}
-
-	int ii = 0;
-	float buf;
-	while (ifs >> buf)
+	else
 	{
-		// 读取的是质量衰减系数，需要转换为线性衰减系数，并将单位转化为 1/mm
-		h_mForwardProj.gridLineAtten[ii] = buf;
-		// 转换
-		h_mForwardProj.gridLineAtten[ii] = h_mForwardProj.gridLineAtten[ii] * mGridInfo.rhoGS / 10;    // 1/mm
-		ii++;
+		int ii = 0;
+		float buf;
+		while (ifs >> buf && ii < mCTScanParas.specEnergyNum)
+		{
+			// 读取的是质量衰减系数，需要转换为线性衰减系数，并将单位转化为 1/mm
+			//h_mForwardProj.gridLinearAtten[ii] = buf;
+			// 转换
+			h_mForwardProj.gridLinearAtten[ii] = buf * mGridInfo.gridStripDensity / 10;    // 1/mm
+			ii++;
+		}
+		ifs.close();
 	}
 
-	ifs.close();
+	// 读取间隔填充物质量衰减系数
+	ifs.open(mGridInfo.interspaceMAPath, ios::in);
+
+	if (!ifs.is_open())
+	{
+		cout << "间隔填充物质量衰减系数文件打开失败！" << endl;
+		system("pause");
+		exit(0);
+	}
+	else
+	{
+		int ii = 0;
+		float buf;
+		while (ifs >> buf && ii < mCTScanParas.specEnergyNum)
+		{
+			// 读取的是质量衰减系数，需要转换为线性衰减系数，并将单位转化为 1/mm
+			//h_mForwardProj.gridLinearAtten[ii] = buf;
+			// 转换
+			h_mForwardProj.interspaceLinearAtten[ii] = buf * mGridInfo.interspaceDensity / 10;    // 1/mm
+			ii++;
+		}
+		ifs.close();
+	}
 }
 
 // 读取闪烁体的质量衰减系数(cm^2/g)，转换为线性衰减系数(1/mm)
@@ -210,7 +239,7 @@ void CBCTForwardProj::readScintillatorMassAttu()
 
 	int ii = 0;
 	float buf;
-	while (ifs >> buf)
+	while (ifs >> buf && ii < mCTScanParas.specEnergyNum)
 	{
 		// 读取的是质量衰减系数，需要转换为线性衰减系数，并将单位转化为 1/mm
 		h_mForwardProj.scintillatorLineAtten[ii] = buf;
@@ -231,29 +260,29 @@ void CBCTForwardProj::getADetResponse()
 
 void CBCTForwardProj::saveADetResponse()
 {
-	string directory = "OutputResult"; // 指定目录名
-	string filename = "ADetResponse.txt"; // 文件名
-	
-	if (_access(directory.c_str(), 0) == -1)
+
+	string tempPath = mFilePath.outputFolder + "/ADetResponse.txt";
+
+	if (_access(mFilePath.outputFolder.c_str(), 0) == -1)
 	{
 		// if this folder not exist, create a new one.
 		// 创建目录
-		if (_mkdir(directory.c_str()) == -1)
+		if (_mkdir(mFilePath.outputFolder.c_str()) == -1)
 		{
 			cerr << "Error: Creating ADetResponse file is fair！" << endl;
 		}
 		// 返回 0 表示创建成功，-1 表示失败
 	}
-	
 
 
 	// 打开文件
 	ofstream ofs;
-	ofs.open(directory + "/" + filename, ios::out);
+	ofs.open(tempPath, ios::out);
 
-	if (!ofs.is_open()) {
+	if (!ofs.is_open())
+	{
 		cerr << "Error: Cannot open ADetResponse file" << endl;
-		return ;
+		return;
 	}
 
 	// 写入数据
@@ -265,6 +294,7 @@ void CBCTForwardProj::saveADetResponse()
 	// 关闭文件
 	ofs.close();
 }
+
 
 void CBCTForwardProj::showScanSystemInfo()
 {
@@ -297,19 +327,19 @@ void CBCTForwardProj::showScanSystemInfo()
 
 	cout << "*****************聚焦型滤线栅信息****************" << endl;
 	cout.width(15);
-	cout << "栅条材质:" << materialGridStrip << endl;
+	cout << "栅条材质:" << gridStripMaterial << endl;
 	cout.width(15);
-	cout << "线性衰减系数:"; cout.width(10); cout << uGridStrip * 1000 << " 1/mm" << endl;
+	cout << "线性衰减系数:"; cout.width(10); cout << gridStripLinearAtten * 1000 << " 1/mm" << endl;
 	cout.width(15);
-	cout << "间隙物材质:" << materialGridInterspacer << endl;
+	cout << "间隙物材质:" << interspaceMaterial << endl;
 	cout.width(15);
-	cout << "线性衰减系数:"; cout.width(10); cout << uInterspacer * 1000 << " 1/mm" << endl;
+	cout << "线性衰减系数:"; cout.width(10); cout << interspaceLinearAtten * 1000 << " 1/mm" << endl;
 	cout.width(15);
 	cout << "周期:"; cout.width(10); cout << gridPeriod << " um" << endl;
 	cout.width(15);
-	cout << "栅条宽度:"; cout.width(10); cout << leadStripsWidth << " um" << endl;
+	cout << "栅条宽度:"; cout.width(10); cout << gridStripsWidth << " um" << endl;
 	cout.width(15);
-	cout << "间隙距离:"; cout.width(10); cout << leadStripsDistance << " um" << endl;
+	cout << "间隙距离:"; cout.width(10); cout << interspcaceWidth << " um" << endl;
 	cout.width(15);
 	cout << "厚度:"; cout.width(10); cout << h / 1000 << " mm" << endl;
 	cout.width(15);
@@ -322,19 +352,19 @@ void CBCTForwardProj::showGridmInfo()
 	cout << endl;
 	cout << "*****************聚焦型滤线栅信息****************" << endl;
 	cout.width(15);
-	cout << "栅条材质:" << mGridInfo.materialGridStrip << endl;
+	cout << "栅条材质:" << mGridInfo.gridStripMaterial << endl;
 	//cout.width(15);
-	//cout << "线性衰减系数:"; cout.width(10); cout << uGridStrip * 1000 << " 1/mm" << endl;
+	//cout << "线性衰减系数:"; cout.width(10); cout << gridStripLinearAtten * 1000 << " 1/mm" << endl;
 	cout.width(15);
-	cout << "间隙物材质:" << mGridInfo.materialGridInterspacer << endl;
+	cout << "间隙物材质:" << mGridInfo.interspaceMaterial << endl;
 	//cout.width(15);
-	//cout << "线性衰减系数:"; cout.width(10); cout << uInterspacer * 1000 << " 1/mm" << endl;
+	//cout << "线性衰减系数:"; cout.width(10); cout << interspaceLinearAtten * 1000 << " 1/mm" << endl;
 	cout.width(15);
-	cout << "周期:"; cout.width(10); cout << mGridInfo.leadStripsWidth + mGridInfo.leadStripsDistance << " um" << endl;
+	cout << "周期:"; cout.width(10); cout << mGridInfo.gridStripsWidth + mGridInfo.interspcaceWidth << " um" << endl;
 	cout.width(15);
-	cout << "栅条宽度:"; cout.width(10); cout << mGridInfo.leadStripsWidth << " um" << endl;
+	cout << "栅条宽度:"; cout.width(10); cout << mGridInfo.gridStripsWidth << " um" << endl;
 	cout.width(15);
-	cout << "间隙距离:"; cout.width(10); cout << mGridInfo.leadStripsDistance << " um" << endl;
+	cout << "间隙距离:"; cout.width(10); cout << mGridInfo.interspcaceWidth << " um" << endl;
 	cout.width(15);
 	cout << "厚度:"; cout.width(10); cout << mGridInfo.h << " mm" << endl;
 	cout.width(15);
@@ -353,5 +383,59 @@ void CBCTForwardProj::computeProj()
 				= logf(h_mForwardProj.I0[i] / IPolyenergetic[j * mCTScanParas.dNumU * mCTScanParas.dNumV + i]);
 		}
 	}
-	
+
+}
+
+void CBCTForwardProj::creatOutputFolder()
+{
+	// 指定要创建的多层文件夹路径
+	filesystem::path folder_path = mFilePath.outputFolder;
+
+	// 检查是否是目录
+	//if (filesystem::is_directory(folder_path)) // 删除整个文件夹，好像不需要判断是否是目录，不存在创建即可。若是删除目录下的文件，应该需要先判断此目录存在否
+	//{
+		// 检查文件夹是否已经存在
+		if (filesystem::exists(folder_path))
+		{
+			// 删除已存在文件夹
+			_removeOutputFolder();
+			//cout << "Folder already exists: " << folder_path << endl;
+		}
+
+		// 创建
+		try {
+			// 创建多层文件夹
+			filesystem::create_directories(folder_path);
+			//cout << "Folder created: " << folder_path << endl;
+		}
+		catch (const std::exception& e)
+		{
+			cerr << "Error creating directories(" << mFilePath.outputFolder << "): " << e.what() << endl;
+		}
+
+	//}
+	/*else
+	{
+		cerr << "Error: (" << mFilePath.outputFolder << ") Invalid directory path." << endl;
+		system("pause");
+		exit(1);
+		return;
+	}*/
+
+}
+
+void CBCTForwardProj::_removeOutputFolder()
+{
+	filesystem::path folder_path = mFilePath.outputFolder;
+
+	try 
+	{
+		filesystem::remove_all(folder_path);
+	}
+	catch (const std::exception& e) {
+		cerr << "Error removing directory(" << mFilePath.outputFolder << "): " << e.what() << endl;
+		system("pause");
+		exit(1);
+		return;
+	}
 }
